@@ -4,7 +4,7 @@ const { execFileSync } = require("node:child_process");
 const { dirname, join } = require("node:path");
 const { fileURLToPath } = require("node:url");
 
-const root = "/c/Users/MSQ/Downloads/Catalog";
+const root = join(__dirname, "..");
 
 const failed = [];
 
@@ -33,6 +33,7 @@ run("no service_role / sb_secret / keys in tree", ["git", "grep", "-nIE", "-e", 
 console.log("");
 console.log("== Build bundle leak check ==");
 run("npm run build", ["npm", "run", "build"], { silent: true, shell: true });
+
 let bundleMatches = "";
 try {
   const out = execFileSync("grep", ["-RIlE", "eyJ[A-Za-z0-9_-]{20,}|SUPABASE_ANON_KEY|TURNSTILE_SECRET_KEY", ".next/static"], { cwd: root, encoding: "utf8", stdio: "pipe", maxBuffer: 1024 * 1024 });
