@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useState } from "react";
 
 import {
   deleteCategoryAction,
@@ -31,22 +31,20 @@ export default function CategoriesManager({
     EMPTY_STATE,
   );
 
-  // Close the open dialogs after a save or delete has succeeded. The only
-  // state change inside is a full page reload, so this effect does not update
-  // React state in response to prop changes.
-  // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(() => {
-    const anyOpen = adding || editing !== null || deleting !== null;
-    if (anyOpen) {
-      if (saveState.success !== undefined || deleteState.success !== undefined) {
-        setAdding(false);
-        setEditing(null);
-        setDeleting(null);
-        setRefreshing(true);
-        window.location.reload();
-      }
-    }
-  }, [saveState, deleteState, adding, editing, deleting]);
+  // A save or delete succeeded: close the dialogs and refresh. The form is
+  // rebuilt from the refreshed list, so no state needs to be synced back to
+  // React; the reload simply rebinds every dialog to null.
+  const anyOpen = adding || editing !== null || deleting !== null;
+  if (
+    anyOpen &&
+    (saveState.success !== undefined || deleteState.success !== undefined)
+  ) {
+    setAdding(false);
+    setEditing(null);
+    setDeleting(null);
+    setRefreshing(true);
+    window.location.reload();
+  }
 
   const showForm = adding || editing !== null;
   const formKey = editing?.id ?? "new";
@@ -92,7 +90,11 @@ export default function CategoriesManager({
             </thead>
             <tbody>
               {categories.map((c) => (
-                <tr key={c.id} className="border-t" style={{ borderColor: "var(--line)" }}>
+                <tr
+                  key={c.id}
+                  className="border-t"
+                  style={{ borderColor: "var(--line)" }}
+                >
                   <td className="px-4 py-3 font-semibold">{c.name}</td>
                   <td className="px-4 py-3">{c.product_count}</td>
                   <td className="px-4 py-3">{c.sort_order}</td>
@@ -166,12 +168,20 @@ export default function CategoriesManager({
                 defaultValue={editing?.sort_order ?? 0}
               />
               {saveState.error ? (
-                <p className="text-sm font-semibold" style={{ color: "var(--rose)" }} role="alert">
+                <p
+                  className="text-sm font-semibold"
+                  style={{ color: "var(--rose)" }}
+                  role="alert"
+                >
                   {saveState.error}
                 </p>
               ) : null}
               <div className="mt-2 flex gap-3">
-                <button className="btn-primary flex-1" type="submit" disabled={savePending}>
+                <button
+                  className="btn-primary flex-1"
+                  type="submit"
+                  disabled={savePending}
+                >
                   {savePending ? "Saving" : "Save category"}
                 </button>
                 <button
@@ -200,13 +210,21 @@ export default function CategoriesManager({
           <div className="card w-full max-w-md p-6">
             <p className="mb-4 font-semibold">Delete “{deleting.name}”?</p>
             {deleteState.error ? (
-              <p className="mb-3 text-sm font-semibold" style={{ color: "var(--rose)" }} role="alert">
+              <p
+                className="mb-3 text-sm font-semibold"
+                style={{ color: "var(--rose)" }}
+                role="alert"
+              >
                 {deleteState.error}
               </p>
             ) : null}
             <form action={deleteAction} className="flex gap-3">
               <input type="hidden" name="id" value={deleting.id} />
-              <button className="btn-danger flex-1" type="submit" disabled={deletePending}>
+              <button
+                className="btn-danger flex-1"
+                type="submit"
+                disabled={deletePending}
+              >
                 Delete
               </button>
               <button

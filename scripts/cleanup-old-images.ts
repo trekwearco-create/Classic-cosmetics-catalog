@@ -18,27 +18,27 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 async function main() {
   const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 
-  // Storage paths of product images rows older than the cutoff.
+  // Storage paths of product image rows created before the cutoff.
   const { data: rows, error: rowsErr } = await supabase
     .from('product_images')
-    .select('storage_path')
+    .select('storage_path', { count: 'exact', head: true })
     .gte('created_at', cutoff);
   if (rowsErr) throw rowsErr;
 
   const existing = new Set((rows ?? []).map((r) => r.storage_path));
 
-  // Any storage prefix under product-images that is not in existing paths.
-  const { data: prefixList, error: prefixErr } = await supabase.storage
+  // Paths under the bucket that are not attached to any row.
+  const { data: prefixes, error: prefixErr } = await supabase.storage
     .from('product-images')
-    .list('products', false);
+    .list('products', { limit: 1000 });
   if (prefixErr) throw prefixErr;
 
   const toDelete: string[] = [];
-  for (const prefix of prefixList ?? []) {
-    const entries = await supabase.storage
+  for (const prefix of prefixes ?? []) {
+    const { data: entries } = await supabase.storage
       .from('product-images')
-      .list(prefix.name, true);
-    for (const entry of entries.data ?? []) {
+      .list(prefix.name, { limit: 1000 });
+    for (const entry of entries ?? []) {
       if (!existing.has(entry.name)) toDelete.push(entry.name);
     }
   }
