@@ -66,7 +66,7 @@ export default function AdminShell({
             src="/logo.png"
             alt="Classic Cosmetics"
             width={130}
-            height={54}
+            height={77}
             className="h-auto w-[130px]"
             priority
           />
@@ -101,7 +101,7 @@ export default function AdminShell({
               src="/logo.png"
               alt="Classic Cosmetics"
               width={130}
-              height={54}
+              height={77}
               className="h-auto w-[130px]"
               priority
             />

@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
@@ -14,12 +14,7 @@ const categorySchema = z.object({
   id: z.string().uuid().optional(),
   name: z.string().trim().min(1).max(60),
   sort_order: z.coerce.number().int().min(0).max(9999),
-  image_url: z
-    .string()
-    .url()
-    .max(500)
-    .refine((u) => u.includes("/storage/v1/object/public/product-images/"))
-    .nullish(),
+  image_url: z.string().url().max(500).refine(isPublicImageUrl).nullish(),
 });
 
 export type CategoryFormState = {
@@ -35,6 +30,31 @@ async function requireAdmin(): Promise<boolean> {
 
 function safeSlug(name: string): string {
   return slugify(name);
+}
+
+function isPublicImageUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    const base = new URL(process.env.SUPABASE_URL ?? "");
+    return (
+      url.origin === base.origin &&
+      url.pathname.startsWith("/storage/v1/object/public/product-images/") &&
+      url.search === ""
+    );
+  } catch {
+    return false;
+  }
+}
+
+function storagePathFromPublicUrl(value: string | null | undefined): string | null {
+  if (!value || !isPublicImageUrl(value)) return null;
+  try {
+    return decodeURIComponent(
+      new URL(value).pathname.split("/storage/v1/object/public/product-images/")[1] ?? "",
+    ) || null;
+  } catch {
+    return null;
+  }
 }
 
 export async function saveCategoryAction(
@@ -69,6 +89,17 @@ export async function saveCategoryAction(
 
   const supabase = await supabaseServer();
   const slug = safeSlug(parsed.data.name);
+  const previous = parsed.data.id
+    ? await supabase
+        .from("categories")
+        .select("image_url")
+        .eq("id", parsed.data.id)
+        .maybeSingle()
+    : { data: null, error: null };
+  if (previous.error) {
+    log.error("category lookup failed", { code: previous.error.code });
+    return { error: "Something went wrong. Please try again." };
+  }
 
   const { data: existing } = await supabase
     .from("categories")
@@ -94,12 +125,26 @@ export async function saveCategoryAction(
     : await supabase.from("categories").insert(values);
 
   if (error) {
-    log.error("category save failed", error);
+    log.error("category save failed", { code: error.code });
     return { error: "Something went wrong. Please try again." };
   }
 
+  const oldImagePath = storagePathFromPublicUrl(previous.data?.image_url);
+  const newImagePath = storagePathFromPublicUrl(values.image_url);
+  if (oldImagePath && oldImagePath !== newImagePath) {
+    const { error: removeError } = await supabase.storage
+      .from("product-images")
+      .remove([oldImagePath]);
+    if (removeError) {
+      log.warn("category image cleanup failed", { code: removeError.name });
+    }
+  }
+
+  updateTag("public-catalog");
   revalidatePath("/admin/categories");
   revalidatePath("/");
+  revalidatePath("/categories");
+  revalidatePath("/categories/[slug]", "page");
   return { success: "Category saved" };
 }
 
@@ -122,12 +167,21 @@ export async function deleteCategoryAction(
   }
 
   const supabase = await supabaseServer();
+  const { data: category, error: lookupError } = await supabase
+    .from("categories")
+    .select("image_url")
+    .eq("id", id.data)
+    .maybeSingle();
+  if (lookupError) {
+    log.error("category lookup failed", { code: lookupError.code });
+    return { error: "Something went wrong. Please try again." };
+  }
   const { count, error: countError } = await supabase
     .from("products")
     .select("id", { count: "exact", head: true })
     .eq("category_id", id.data);
   if (countError) {
-    log.error("category delete count failed", countError);
+    log.error("category delete count failed", { code: countError.code });
     return { error: "Something went wrong. Please try again." };
   }
   if ((count ?? 0) > 0) {
@@ -141,11 +195,24 @@ export async function deleteCategoryAction(
     .delete()
     .eq("id", id.data);
   if (error) {
-    log.error("category delete failed", error);
+    log.error("category delete failed", { code: error.code });
     return { error: "Something went wrong. Please try again." };
   }
 
+  const imagePath = storagePathFromPublicUrl(category?.image_url);
+  if (imagePath) {
+    const { error: removeError } = await supabase.storage
+      .from("product-images")
+      .remove([imagePath]);
+    if (removeError) {
+      log.warn("category image cleanup failed", { code: removeError.name });
+    }
+  }
+
+  updateTag("public-catalog");
   revalidatePath("/admin/categories");
   revalidatePath("/");
+  revalidatePath("/categories");
+  revalidatePath("/categories/[slug]", "page");
   return { success: "Category deleted" };
 }

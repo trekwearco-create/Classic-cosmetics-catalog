@@ -9,7 +9,7 @@ import { limitLogin } from "@/lib/ratelimit";
 import { supabaseServer } from "@/lib/supabase/server";
 import { verifyTurnstile } from "@/lib/turnstile";
 
-const LOGIN_ERROR = "Email or password is incorrect.";
+const LOGIN_ERROR = "Incorrect email or password.";
 
 export type LoginState = { error?: string };
 
@@ -55,8 +55,32 @@ export async function loginAction(
     password,
   });
   if (error) {
-    log.warn("login attempt failed");
+    log.warn("login failed", { code: error.code });
+    if (error.code === "email_not_confirmed") {
+      return { error: "Please confirm your email address before signing in." };
+    }
     return { error: LOGIN_ERROR };
+  }
+
+  const { data: isAdmin, error: adminCheckError } =
+    await supabase.rpc("is_admin");
+  if (adminCheckError) {
+    log.error("admin membership check failed", {
+      code: adminCheckError.code,
+    });
+    const { error: signOutError } = await supabase.auth.signOut();
+    if (signOutError) {
+      log.warn("session cleanup failed", { code: signOutError.code });
+    }
+    return { error: "Unable to verify admin access. Please try again." };
+  }
+
+  if (!isAdmin) {
+    const { error: signOutError } = await supabase.auth.signOut();
+    if (signOutError) {
+      log.warn("session cleanup failed", { code: signOutError.code });
+    }
+    return { error: "This account does not have admin access." };
   }
 
   redirect("/admin");

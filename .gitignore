@@ -18,7 +18,9 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# env files — never commit any real keys (only .env.example is committed)
+# env files — never commit local or production secrets
+.env
+.env*.local
 .env*
 !.env.example
 

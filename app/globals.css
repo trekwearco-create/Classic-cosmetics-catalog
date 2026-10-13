@@ -198,3 +198,117 @@ button {
   border-radius: var(--radius-card);
   animation: shimmer 1.4s ease-in-out infinite alternate;
 }
+
+.category-rail {
+  display: grid;
+  grid-auto-columns: minmax(76px, 22vw);
+  grid-auto-flow: column;
+  gap: 14px;
+  overflow-x: auto;
+  padding: 2px 2px 10px;
+  scrollbar-width: none;
+  overscroll-behavior-x: contain;
+}
+
+.category-rail::-webkit-scrollbar {
+  display: none;
+}
+
+.product-detail-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 24px;
+}
+
+.product-gallery {
+  min-width: 0;
+}
+
+.product-gallery-track {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+
+.product-gallery-track::-webkit-scrollbar {
+  display: none;
+}
+
+.product-gallery-slide {
+  position: relative;
+  flex: 0 0 100%;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--white);
+  scroll-snap-align: center;
+}
+
+.product-image-empty {
+  display: grid;
+  aspect-ratio: 1;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--white);
+  color: var(--ink-2);
+}
+
+.product-detail-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 20px;
+}
+
+.mobile-buy-bar {
+  position: fixed;
+  z-index: 40;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--line);
+  background: var(--white);
+}
+
+@media (min-width: 768px) {
+  .category-rail {
+    grid-auto-columns: minmax(96px, 140px);
+    gap: 20px;
+  }
+
+  .product-detail-layout {
+    grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
+    align-items: start;
+    gap: 40px;
+  }
+
+  .product-gallery-track {
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) repeat(2, minmax(0, 1fr));
+    grid-template-rows: repeat(2, minmax(140px, 1fr));
+    overflow: visible;
+  }
+
+  .product-gallery-slide {
+    min-width: 0;
+    flex: initial;
+    aspect-ratio: 1;
+  }
+
+  .product-gallery-slide:first-child {
+    grid-row: span 2;
+    aspect-ratio: auto;
+  }
+
+  .product-detail-copy {
+    position: sticky;
+    top: 100px;
+  }
+}

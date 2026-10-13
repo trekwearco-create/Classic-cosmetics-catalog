@@ -2,12 +2,15 @@
 
 import { useState } from "react";
 
+import ImageUploader, { type UploadItem } from "@/components/admin/ImageUploader";
+
 export type ShadeRow = {
   key: string;
   code: string;
   name: string;
   color_hex: string;
   is_available: boolean;
+  image: UploadItem | null;
 };
 
 export function parseBulkShades(text: string): ShadeRow[] {
@@ -26,6 +29,7 @@ export function parseBulkShades(text: string): ShadeRow[] {
           name: parts.slice(1).join(" "),
           color_hex: "",
           is_available: true,
+          image: null,
         };
       }
       return {
@@ -34,6 +38,7 @@ export function parseBulkShades(text: string): ShadeRow[] {
         name: parts.join(" "),
         color_hex: "",
         is_available: true,
+        image: null,
       };
     });
 }
@@ -41,9 +46,11 @@ export function parseBulkShades(text: string): ShadeRow[] {
 export default function ShadeEditor({
   shades,
   onChange,
+  productId,
 }: {
   shades: ShadeRow[];
   onChange: (rows: ShadeRow[]) => void;
+  productId: string;
 }) {
   const [bulkOpen, setBulkOpen] = useState(false);
   const [bulkText, setBulkText] = useState("");
@@ -70,6 +77,7 @@ export default function ShadeEditor({
         name: "",
         color_hex: "",
         is_available: true,
+        image: null,
       },
     ]);
   }
@@ -115,6 +123,17 @@ export default function ShadeEditor({
               />
               {shade.is_available ? "Available" : "Unavailable"}
             </label>
+            <div className="w-full">
+              <ImageUploader
+                items={shade.image ? [shade.image] : []}
+                onChange={(items) =>
+                  update(i, { image: items[0] ?? null })
+                }
+                productId={productId}
+                max={1}
+                purpose="shade"
+              />
+            </div>
             <div className="flex flex-none items-center gap-1">
               <button
                 type="button"

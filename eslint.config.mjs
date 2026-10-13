@@ -57,7 +57,7 @@ export default [
       parserOptions: {
         sourceType: "module",
         ecmaVersion: 2022,
-        projectService: { allowDefaultProject: ["*.ts", "*.tsx"] },
+        projectService: true,
       },
     },
     rules: {
@@ -80,7 +80,6 @@ export default [
       "node_modules/**",
       "eslint.config.mjs",
       "next.config.ts",
-      "middleware.ts",
     ],
   },
 ];

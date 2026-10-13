@@ -14,6 +14,7 @@ type ApiCard = {
   discount_price: number | null;
   in_stock: boolean;
   cover_url: string | null;
+  shade_colors: string[];
 };
 
 function Card({ product }: { product: ApiCard }) {
@@ -30,10 +31,17 @@ function Card({ product }: { product: ApiCard }) {
             src={product.cover_url}
             alt={product.name}
             fill
+            unoptimized
             sizes="(min-width: 1024px) 25vw, (min-width: 768px) 33vw, 50vw"
             className="object-contain"
           />
-        ) : null}
+        ) : (
+          <div className="grid h-full place-items-center" aria-hidden="true">
+            <span className="text-xs" style={{ color: "rgba(0,0,0,.68)" }}>
+              No photo
+            </span>
+          </div>
+        )}
         {!product.in_stock ? (
           <span className="badge-out absolute left-2 top-2">Out of stock</span>
         ) : percent > 0 ? (
@@ -45,6 +53,17 @@ function Card({ product }: { product: ApiCard }) {
           {product.category_name}
         </p>
         <h3 className="clamp-2 text-sm font-bold leading-snug md:text-[15px]">{product.name}</h3>
+        {product.shade_colors.length > 0 ? (
+          <div className="mt-1 flex items-center gap-1" aria-label="Available shades">
+            {product.shade_colors.slice(0, 6).map((color, index) => (
+              <span
+                key={`${color}-${index}`}
+                className="h-3.5 w-3.5 rounded-full border"
+                style={{ background: color, borderColor: "var(--line)" }}
+              />
+            ))}
+          </div>
+        ) : null}
         <p className="mt-auto pt-1 text-sm md:text-[15px]">
           <b>{formatMoney(price)}</b>
           {percent > 0 && product.discount_price !== null ? (
@@ -75,12 +94,14 @@ export default function LoadMore({
   const [page, setPage] = useState(() => initialPage);
   const [hasMore, setHasMore] = useState(() => initialHasMore);
   const [loading, setLoading] = useState(false);
+  const [requestError, setRequestError] = useState(false);
   const guard = useRef(false);
 
   async function loadMore() {
     if (loading || guard.current) return;
     guard.current = true;
     setLoading(true);
+    setRequestError(false);
     try {
       const sp = new URLSearchParams();
       if (q) sp.set("q", q);
@@ -93,7 +114,7 @@ export default function LoadMore({
       setPage((p) => p + 1);
       setHasMore(data.products.length === 24);
     } catch {
-      setHasMore(false);
+      setRequestError(true);
     } finally {
       setLoading(false);
       guard.current = false;
@@ -110,14 +131,19 @@ export default function LoadMore({
         ))}
       </div>
       {hasMore ? (
-        <div className="mt-6 flex justify-center">
+        <div className="mt-6 flex flex-col items-center gap-3">
+          {requestError ? (
+            <p className="text-sm font-semibold" role="alert" style={{ color: "var(--rose)" }}>
+              Could not load more products. Please try again.
+            </p>
+          ) : null}
           <button
             className="btn-secondary"
             type="button"
             onClick={() => void loadMore()}
             disabled={loading}
           >
-            {loading ? "Loading" : "Load more products"}
+            {loading ? "Loading" : requestError ? "Try again" : "Load more products"}
           </button>
         </div>
       ) : null}

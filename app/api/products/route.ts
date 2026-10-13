@@ -33,6 +33,7 @@ export async function GET(request: Request): Promise<NextResponse> {
           discount_price: p.discount_price,
           in_stock: p.in_stock,
           cover_url: p.cover_url,
+          shade_colors: p.shade_colors,
         })),
       },
       { headers: { "Cache-Control": "no-store" } },

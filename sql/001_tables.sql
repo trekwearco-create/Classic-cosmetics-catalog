@@ -1,3 +1,6 @@
+uct_images_product_idx on public.product_images (product_id, sort_order);
+create unique index if not exists one_cover_per_product
+  on public.product_images (product_id) where is_cover;
 -- Classic Cosmetics: tables, indexes, triggers.
 -- Run this file in the Supabase SQL editor first.
 
@@ -37,10 +40,7 @@ create table if not exists public.product_images (
   is_cover boolean not null default false,
   created_at timestamptz not null default now()
 );
-create index if not exists product_images_product_idx on public.product_images (product_id, sort_order);
-create unique index if not exists one_cover_per_product
-  on public.product_images (product_id) where is_cover;
-
+create index if not exists prod
 create table if not exists public.product_shades (
   id uuid primary key default gen_random_uuid(),
   product_id uuid not null references public.products(id) on delete cascade,

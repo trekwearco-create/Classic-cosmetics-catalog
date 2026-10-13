@@ -27,7 +27,7 @@ const buildCsp = (turnstile: boolean) =>
     "default-src 'self'",
     `img-src 'self' data: blob:${storageHostname ? ` https://${storageHostname}` : ""}`,
     "style-src 'self' 'unsafe-inline'",
-    `script-src 'self' 'unsafe-inline'${turnstile ? ` ${CF}` : ""}`,
+    `script-src 'self' 'unsafe-inline'${isProd ? "" : " 'unsafe-eval'"}${turnstile ? ` ${CF}` : ""}`,
     "font-src 'self'",
     `connect-src 'self'${turnstile ? ` ${CF}` : ""}`,
     turnstile ? `frame-src ${CF}` : "frame-src 'none'",
@@ -53,6 +53,7 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   productionBrowserSourceMaps: false,
   reactStrictMode: true,
+  devIndicators: false,
   images: {
     remotePatterns: storageHostname
       ? [

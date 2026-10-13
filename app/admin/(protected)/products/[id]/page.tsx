@@ -58,6 +58,14 @@ export default async function EditProductPage({
             name: s.name,
             color_hex: s.color_hex ?? "",
             is_available: s.is_available,
+            image: s.image
+              ? {
+                  key: s.image_id ?? s.id,
+                  url: s.image.url,
+                  path: s.image.path,
+                  progress: "done" as const,
+                }
+              : null,
           })),
         }}
       />

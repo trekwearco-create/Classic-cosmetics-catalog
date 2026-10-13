@@ -17,11 +17,13 @@ export default function ImageUploader({
   onChange,
   productId,
   max = 12,
+  purpose = "product",
 }: {
   items: UploadItem[];
   onChange: (items: UploadItem[]) => void;
   productId: string;
   max?: number;
+  purpose?: "product" | "shade";
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
@@ -29,21 +31,22 @@ export default function ImageUploader({
 
   async function upload(files: FileList) {
     setError(null);
-    if (items.length + files.length > max) {
+    const singleImage = purpose === "shade";
+    if (
+      (singleImage && files.length > 1) ||
+      (!singleImage && items.length + files.length > max)
+    ) {
       setError(`Up to ${max} photos per product.`);
       return;
     }
     setBusy(true);
-    const newItems: UploadItem[] = [...items];
+    const newItems: UploadItem[] = singleImage ? [] : [...items];
+    const previousItems = items;
     for (const file of Array.from(files)) {
       if (newItems.length >= max) break;
       const { blob, error: compressError } = await compressImage(file);
-      if (compressError === "size") {
-        setError("This photo could not be uploaded. Use a JPG, PNG or WebP under 5 MB and try again.");
-        continue;
-      }
-      if (compressError === "type") {
-        setError("This photo could not be uploaded. Use a JPG, PNG or WebP under 5 MB and try again.");
+      if (compressError) {
+        setError("Use a JPG, PNG or WebP image under 5 MB.");
         continue;
       }
       const key = `${file.name}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
@@ -53,11 +56,14 @@ export default function ImageUploader({
         path: "",
         progress: "uploading",
       };
-      newItems.push(placeholder);
-      onChange(newItems);
+      if (!singleImage) {
+        newItems.push(placeholder);
+        onChange(newItems);
+      }
 
       const body = new FormData();
       body.set("productId", productId);
+      body.set("purpose", purpose);
       body.set("file", new File([blob], "photo.webp", { type: "image/webp" }));
 
       try {
@@ -71,13 +77,11 @@ export default function ImageUploader({
         placeholder.url = json.url;
         placeholder.path = json.path;
         placeholder.progress = "done";
-        onChange([...newItems]);
+        onChange(singleImage ? [placeholder] : [...newItems]);
       } catch {
         placeholder.progress = "error";
-        setError(
-          "This photo could not be uploaded. Use a JPG, PNG or WebP under 5 MB and try again.",
-        );
-        onChange([...newItems]);
+        setError("This photo could not be uploaded. Please try again.");
+        onChange(singleImage ? previousItems : [...newItems]);
       }
     }
     setBusy(false);
@@ -95,8 +99,6 @@ export default function ImageUploader({
   function remove(index: number) {
     onChange(items.filter((_, i) => i !== index));
   }
-
-  const hasErrorItem = items.some((i) => i.progress === "error");
 
   return (
     <div>
@@ -116,7 +118,7 @@ export default function ImageUploader({
               style={{ background: "var(--blush)" }}
               unoptimized
             />
-            {i === 0 ? (
+            {purpose === "product" && i === 0 ? (
               <span
                 className="absolute left-1.5 top-1.5 rounded px-1.5 py-1 text-[10px] font-bold"
                 style={{ background: "var(--ink)", color: "var(--white)" }}
@@ -141,35 +143,42 @@ export default function ImageUploader({
               className="absolute inset-x-0 bottom-0 flex justify-center gap-1 p-1"
               style={{ background: "rgba(255,255,255,.82)" }}
             >
+              {purpose === "product" ? (
+                <button
+                  type="button"
+                  aria-label="Move photo earlier"
+                  onClick={() => move(i, -1)}
+                  disabled={busy}
+                  className="rounded px-1.5 py-0.5 text-xs font-bold"
+                >
+                  ←
+                </button>
+              ) : null}
               <button
                 type="button"
-                aria-label="Move photo earlier"
-                onClick={() => move(i, -1)}
-                className="rounded px-1.5 py-0.5 text-xs font-bold"
-              >
-                ←
-              </button>
-              <button
-                type="button"
-                aria-label="Delete photo"
+                aria-label={purpose === "shade" ? "Remove shade photo" : "Delete photo"}
                 onClick={() => remove(i)}
+                disabled={busy}
                 className="rounded px-1.5 py-0.5 text-xs font-bold"
                 style={{ color: "var(--rose)" }}
               >
                 ✕
               </button>
-              <button
-                type="button"
-                aria-label="Move photo later"
-                onClick={() => move(i, 1)}
-                className="rounded px-1.5 py-0.5 text-xs font-bold"
-              >
-                →
-              </button>
+              {purpose === "product" ? (
+                <button
+                  type="button"
+                  aria-label="Move photo later"
+                  onClick={() => move(i, 1)}
+                  disabled={busy}
+                  className="rounded px-1.5 py-0.5 text-xs font-bold"
+                >
+                  →
+                </button>
+              ) : null}
             </div>
           </div>
         ))}
-        {items.length < max ? (
+        {items.length < max || purpose === "shade" ? (
           <button
             type="button"
             onClick={() => inputRef.current?.click()}
@@ -178,9 +187,9 @@ export default function ImageUploader({
             style={{ borderColor: "var(--line)", background: "var(--blush)" }}
           >
             <span>
-              {busy ? "Adding" : "+ Add"}
+              {busy ? "Uploading" : purpose === "shade" && items.length > 0 ? "Replace" : "+ Add"}
               <br />
-              photos
+              {purpose === "shade" ? "shade photo" : "photos"}
             </span>
           </button>
         ) : null}
@@ -199,12 +208,14 @@ export default function ImageUploader({
         }}
       />
       {error ? (
-        <p className="mt-2 text-sm font-semibold" style={{ color: hasErrorItem ? "var(--rose)" : "var(--rose)" }} role="alert">
+        <p className="mt-2 text-sm font-semibold" style={{ color: "var(--rose)" }} role="alert">
           {error}
         </p>
       ) : null}
       <p className="mt-2 text-xs" style={{ color: "rgba(0,0,0,.68)" }}>
-        The first photo becomes the cover. Use the arrows to reorder or ✕ to delete.
+        {purpose === "shade"
+          ? "Upload a separate photo for this shade. Replacing or removing it takes effect when the product is saved."
+          : "The first photo becomes the cover. Use the arrows to reorder or ✕ to delete."}
       </p>
     </div>
   );

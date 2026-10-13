@@ -5,26 +5,19 @@ import type { CategoryRow } from "@/lib/data";
 export default function CategoryChips({
   categories,
   active,
-  q,
 }: {
   categories: CategoryRow[];
   active: string | null;
-  q: string | null;
 }) {
-  const buildHref = (slug: string | null) => {
-    const sp = new URLSearchParams();
-    if (q) sp.set("q", q);
-    if (slug) sp.set("category", slug);
-    const qs = sp.toString();
-    return qs === "" ? "/" : `/?${qs}`;
-  };
+  const buildHref = (slug: string | null) =>
+    slug ? `/categories/${slug}` : "/categories";
 
   return (
     <div className="overflow-x-auto" style={{ scrollbarWidth: "none" }}>
       <div className="flex flex-nowrap gap-2 md:flex-wrap">
         <Link
           href={buildHref(null)}
-          className="flex-none rounded-full border px-4 text-sm font-semibold leading-[40px]"
+          className="flex min-h-11 flex-none items-center rounded-full border px-4 text-sm font-semibold"
           style={
             !active
               ? { background: "var(--ink)", color: "var(--white)", borderColor: "var(--ink)" }
@@ -37,7 +30,7 @@ export default function CategoryChips({
           <Link
             key={c.id}
             href={buildHref(c.slug)}
-            className="flex-none rounded-full border px-4 text-sm font-semibold leading-[40px]"
+            className="flex min-h-11 flex-none items-center rounded-full border px-4 text-sm font-semibold"
             style={
               active === c.slug
                 ? { background: "var(--ink)", color: "var(--white)", borderColor: "var(--ink)" }

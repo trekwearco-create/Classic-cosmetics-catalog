@@ -24,5 +24,5 @@ create policy "photos public read" on storage.objects for select
 
 -- Replace OWNER_EMAIL_HERE with the owner's real email address first.
 insert into public.admin_users (user_id)
-select id from auth.users where email = 'OWNER_EMAIL_HERE'
+select id from auth.users where email = 'classiccosmetics@gmail.com'
 on conflict (user_id) do nothing;

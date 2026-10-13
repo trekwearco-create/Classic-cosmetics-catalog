@@ -48,22 +48,16 @@ export const isAdmin = async (): Promise<boolean> => {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return false;
-  const { data, error } = await supabase
-    .schema("public")
-    .from("admin_users")
-    .select("user_id")
-    .eq("user_id", user.id)
-    .maybeSingle();
+  const { data, error } = await supabase.rpc("is_admin");
   if (error) {
-    logError("admin check failed", error);
+    logError("admin check failed", error.code);
     return false;
   }
-  return data !== null;
+  return data === true;
 };
 
-function logError(context: string, error: unknown) {
-  const message = error instanceof Error ? error.message : String(error);
-  if (process.env.NODE_ENV !== "production") {
-    console.error(`[classic-cosmetics] ${context}: ${message}`);
-  }
+function logError(context: string, code: string | undefined) {
+  console.error(
+    `[classic-cosmetics] ${context}${code ? ` (${code})` : ""}`,
+  );
 }

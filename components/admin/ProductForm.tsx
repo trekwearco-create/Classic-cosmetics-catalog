@@ -9,6 +9,7 @@ import {
   deleteProductAction,
   saveProductAction,
 } from "@/lib/actions/products";
+import { notifyCatalogChanged } from "@/lib/catalog-sync";
 import { discountPercent } from "@/lib/price";
 
 type CategoryOption = { id: string; name: string };
@@ -134,6 +135,10 @@ export default function ProductForm({
       setFormError("Wait for the photos to finish uploading, then save.");
       return;
     }
+    if (shades.some((shade) => shade.image && shade.image.progress !== "done")) {
+      setFormError("Wait for shade photo uploads to finish, then save.");
+      return;
+    }
     const fd = new FormData();
     fd.set(
       "payload",
@@ -165,6 +170,9 @@ export default function ProductForm({
             name: s.name.trim(),
             color_hex: s.color_hex === "" ? null : s.color_hex,
             is_available: s.is_available,
+            image: s.image
+              ? { url: s.image.url, path: s.image.path, is_cover: false }
+              : null,
           })),
       ),
     );
@@ -174,6 +182,7 @@ export default function ProductForm({
         setFormError(result.error);
         return;
       }
+      notifyCatalogChanged();
       router.push("/admin/products");
       router.refresh();
     });
@@ -189,6 +198,7 @@ export default function ProductForm({
         setConfirmDelete(false);
         return;
       }
+      notifyCatalogChanged();
       router.push("/admin/products");
       router.refresh();
     });
@@ -312,7 +322,11 @@ export default function ProductForm({
         <h2 className="mb-4 text-lg" style={{ fontFamily: "var(--font-display)" }}>
           Shades
         </h2>
-        <ShadeEditor shades={shades} onChange={setShades} />
+        <ShadeEditor
+          shades={shades}
+          onChange={setShades}
+          productId={initial.id}
+        />
       </section>
 
       {formError ? (

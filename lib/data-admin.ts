@@ -123,6 +123,7 @@ export type AdminProduct = {
     color_hex: string | null;
     is_available: boolean;
     image_id: string | null;
+    image: { url: string; path: string } | null;
   }>;
 };
 
@@ -165,6 +166,17 @@ export async function getProductAdmin(
   ]);
   if (imagesRes.error) throw new Error(imagesRes.error.message);
   if (shadesRes.error) throw new Error(shadesRes.error.message);
+  const imageById = new Map(
+    (imagesRes.data ?? []).map((image) => [
+      image.id,
+      { url: image.image_url, path: image.storage_path },
+    ]),
+  );
+  const shadeImageIds = new Set(
+    (shadesRes.data ?? [])
+      .map((shade) => shade.image_id)
+      .filter((imageId): imageId is string => imageId !== null),
+  );
 
   return {
     id: product.id,
@@ -177,12 +189,14 @@ export async function getProductAdmin(
     is_visible: product.is_visible,
     in_stock: product.in_stock,
     category_id: product.category_id,
-    images: (imagesRes.data ?? []).map((i) => ({
+    images: (imagesRes.data ?? [])
+      .filter((image) => !shadeImageIds.has(image.id))
+      .map((i) => ({
       id: i.id,
       url: i.image_url,
       storage_path: i.storage_path,
       is_cover: i.is_cover,
-    })),
+      })),
     shades: (shadesRes.data ?? []).map((s) => ({
       id: s.id,
       code: s.code,
@@ -190,6 +204,7 @@ export async function getProductAdmin(
       color_hex: s.color_hex,
       is_available: s.is_available,
       image_id: s.image_id,
+      image: s.image_id ? imageById.get(s.image_id) ?? null : null,
     })),
   };
 }

@@ -1,13 +1,15 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 
+import CategoryImageUploader from "@/components/admin/CategoryImageUploader";
 import {
   deleteCategoryAction,
   saveCategoryAction,
   type CategoryFormState,
 } from "@/lib/actions/categories";
 import type { AdminCategory } from "@/lib/data-admin";
+import { notifyCatalogChanged } from "@/lib/catalog-sync";
 
 const EMPTY_STATE: CategoryFormState = {};
 
@@ -17,10 +19,10 @@ export default function CategoriesManager({
   initial: AdminCategory[];
 }) {
   const [categories] = useState(initial);
-  const [refreshing, setRefreshing] = useState(false);
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState<AdminCategory | null>(null);
   const [deleting, setDeleting] = useState<AdminCategory | null>(null);
+  const [imageUrl, setImageUrl] = useState("");
 
   const [saveState, saveAction, savePending] = useActionState(
     saveCategoryAction,
@@ -31,20 +33,17 @@ export default function CategoriesManager({
     EMPTY_STATE,
   );
 
-  // A save or delete succeeded: close the dialogs and refresh. The form is
-  // rebuilt from the refreshed list, so no state needs to be synced back to
-  // React; the reload simply rebinds every dialog to null.
   const anyOpen = adding || editing !== null || deleting !== null;
-  if (
-    anyOpen &&
-    (saveState.success !== undefined || deleteState.success !== undefined)
-  ) {
-    setAdding(false);
-    setEditing(null);
-    setDeleting(null);
-    setRefreshing(true);
+  useEffect(() => {
+    if (
+      !anyOpen ||
+      (saveState.success === undefined && deleteState.success === undefined)
+    ) {
+      return;
+    }
+    notifyCatalogChanged();
     window.location.reload();
-  }
+  }, [anyOpen, saveState.success, deleteState.success]);
 
   const showForm = adding || editing !== null;
   const formKey = editing?.id ?? "new";
@@ -61,17 +60,12 @@ export default function CategoriesManager({
           onClick={() => {
             setAdding(true);
             setEditing(null);
+            setImageUrl("");
           }}
         >
           Add category
         </button>
       </div>
-
-      {refreshing ? (
-        <p className="mb-4 text-sm" style={{ color: "rgba(0,0,0,.68)" }}>
-          Saving…
-        </p>
-      ) : null}
 
       {categories.length === 0 ? (
         <div className="card p-8 text-center">
@@ -106,6 +100,7 @@ export default function CategoriesManager({
                         onClick={() => {
                           setEditing(c);
                           setAdding(false);
+                          setImageUrl(c.image_url ?? "");
                         }}
                       >
                         Edit
@@ -144,6 +139,7 @@ export default function CategoriesManager({
               {editing ? (
                 <input type="hidden" name="id" value={editing.id} />
               ) : null}
+              <input type="hidden" name="image_url" value={imageUrl} />
               <label className="text-sm font-semibold" htmlFor="cat-name">
                 Name
               </label>
@@ -167,6 +163,7 @@ export default function CategoriesManager({
                 max={9999}
                 defaultValue={editing?.sort_order ?? 0}
               />
+              <CategoryImageUploader imageUrl={imageUrl} onChange={setImageUrl} />
               {saveState.error ? (
                 <p
                   className="text-sm font-semibold"

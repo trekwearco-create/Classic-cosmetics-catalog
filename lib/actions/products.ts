@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
@@ -12,6 +12,12 @@ import { isAdmin, supabaseServer } from "@/lib/supabase/server";
 
 const STORAGE_PREFIX = "/storage/v1/object/public/product-images/";
 
+const imageRowSchema = z.object({
+  url: z.string().url(),
+  path: z.string().min(1).max(300).refine((p) => !p.includes("..")),
+  is_cover: z.boolean(),
+});
+
 const shadeSchema = z.object({
   code: z.string().trim().max(20).nullish(),
   name: z.string().trim().min(1).max(60),
@@ -20,7 +26,7 @@ const shadeSchema = z.object({
     .regex(/^#[0-9A-Fa-f]{6}$/)
     .nullish(),
   is_available: z.boolean(),
-  image_id: z.string().uuid().nullish(),
+  image: imageRowSchema.nullish(),
 });
 
 const productSchema = z.object({
@@ -35,25 +41,38 @@ const productSchema = z.object({
   slug_locked_existing: z.boolean().optional(),
 });
 
-const imageRowSchema = z.object({
-  url: z
-    .string()
-    .url()
-    .refine((u) => u.includes(STORAGE_PREFIX)),
-  path: z.string().min(1).max(300).refine((p) => !p.includes("..")),
-  is_cover: z.boolean(),
-});
-
 export type ProductFormState = { error?: string; slug?: string };
 
 export type ShadeInput = z.input<typeof shadeSchema>;
 export type ImageInput = z.input<typeof imageRowSchema>;
 
 async function revalidateProduct(slug: string, oldSlug?: string) {
+  updateTag("public-catalog");
   revalidatePath("/");
   revalidatePath("/admin/products");
   revalidatePath(`/product/${slug}`);
+  revalidatePath("/categories");
+  revalidatePath("/categories/[slug]", "page");
   if (oldSlug && oldSlug !== slug) revalidatePath(`/product/${oldSlug}`);
+}
+
+function imageBelongsToPath(image: ImageInput, productId: string): boolean {
+  try {
+    const url = new URL(image.url);
+    const base = new URL(process.env.SUPABASE_URL ?? "");
+    const path = decodeURIComponent(
+      url.pathname.slice(STORAGE_PREFIX.length),
+    );
+    return (
+      url.origin === base.origin &&
+      url.pathname.startsWith(STORAGE_PREFIX) &&
+      url.search === "" &&
+      path === image.path &&
+      image.path.startsWith(`products/${productId}/`)
+    );
+  } catch {
+    return false;
+  }
 }
 
 async function sameOriginCheck(): Promise<boolean> {
@@ -112,39 +131,44 @@ export async function saveProductAction(
   }
   const data = parsed.data;
 
-  const imagesParsed = z.array(imageRowSchema).max(12).safeParse(
-    (() => {
-      try {
-        return JSON.parse(String(formData.get("images") ?? "[]"));
-      } catch {
-        return [];
-      }
-    })(),
-  );
+  let imagePayload: unknown;
+  let shadePayload: unknown;
+  try {
+    imagePayload = JSON.parse(String(formData.get("images") ?? "[]"));
+    shadePayload = JSON.parse(String(formData.get("shades") ?? "[]"));
+  } catch {
+    return { error: "Check the product photos and shades, then try again." };
+  }
+  const imagesParsed = z.array(imageRowSchema).max(12).safeParse(imagePayload);
   if (!imagesParsed.success) {
     return { error: "One of the photos is not valid." };
   }
 
-  const shadesParsed = z.array(shadeSchema).max(300).safeParse(
-    (() => {
-      try {
-        return JSON.parse(String(formData.get("shades") ?? "[]"));
-      } catch {
-        return [];
-      }
-    })(),
-  );
+  const shadesParsed = z.array(shadeSchema).max(300).safeParse(shadePayload);
   if (!shadesParsed.success) {
     return { error: "Check the shade details and try again." };
+  }
+  const requestedImages = [
+    ...imagesParsed.data,
+    ...shadesParsed.data.flatMap((shade) =>
+      shade.image ? [shade.image] : [],
+    ),
+  ];
+  if (requestedImages.some((image) => !imageBelongsToPath(image, data.id))) {
+    return { error: "One of the product photos is not valid." };
   }
 
   const supabase = await supabaseServer();
 
-  const { data: productRow } = await supabase
+  const { data: productRow, error: productLookupError } = await supabase
     .from("products")
     .select("id, slug")
     .eq("id", data.id)
     .maybeSingle();
+  if (productLookupError) {
+    log.error("product lookup failed", { code: productLookupError.code });
+    return { error: "Something went wrong. Please try again." };
+  }
   const isUpdate = productRow !== null;
 
   const { data: category } = await supabase
@@ -194,28 +218,72 @@ export async function saveProductAction(
         .insert({ ...productValues, slug, id: data.id });
 
   if (productError) {
-    log.error("product save failed", productError);
+    log.error("product save failed", { code: productError.code });
     return { error: "Something went wrong. Please try again." };
   }
 
-  const images = imagesParsed.data.map((img, i) => ({
-    product_id: data.id,
-    image_url: img.url,
-    storage_path: img.path,
-    sort_order: i,
-    is_cover: i === 0,
-  }));
-
-  const { error: imagesError } = isUpdate
-    ? await supabase.from("product_images").delete().eq("product_id", data.id)
-    : { error: null };
-  if (imagesError) {
-    log.error("image replace failed", imagesError);
+  const { data: currentImages, error: currentImagesError } = await supabase
+    .from("product_images")
+    .select("id, image_url, storage_path")
+    .eq("product_id", data.id);
+  if (currentImagesError) {
+    log.error("product images lookup failed", { code: currentImagesError.code });
+    return { error: "Something went wrong. Please try again." };
   }
-  if (images.length > 0) {
-    const { error } = await supabase.from("product_images").insert(images);
+  const currentByPath = new Map(
+    (currentImages ?? []).map((image) => [image.storage_path, image]),
+  );
+  const desiredByPath = new Map<string, ImageInput>();
+  imagesParsed.data.forEach((image) => desiredByPath.set(image.path, image));
+  shadesParsed.data.forEach((shade) => {
+    if (shade.image) desiredByPath.set(shade.image.path, shade.image);
+  });
+  const imageIdByPath = new Map(
+    (currentImages ?? []).map((image) => [image.storage_path, image.id]),
+  );
+
+  const newImages = [...desiredByPath.values()]
+    .filter((image) => !currentByPath.has(image.path))
+    .map((image, index) => ({
+      product_id: data.id,
+      image_url: image.url,
+      storage_path: image.path,
+      sort_order: imagesParsed.data.findIndex((gallery) => gallery.path === image.path) >= 0
+        ? imagesParsed.data.findIndex((gallery) => gallery.path === image.path)
+        : imagesParsed.data.length + index,
+      is_cover: false,
+    }));
+  if (newImages.length > 0) {
+    const { data: inserted, error } = await supabase
+      .from("product_images")
+      .insert(newImages)
+      .select("id, storage_path");
     if (error) {
-      log.error("image insert failed", error);
+      log.error("product image insert failed", { code: error.code });
+      return { error: "Something went wrong. Please try again." };
+    }
+    inserted?.forEach((image) => imageIdByPath.set(image.storage_path, image.id));
+  }
+
+  for (const [path, image] of desiredByPath) {
+    const id = imageIdByPath.get(image.path);
+    if (!id) {
+      log.error("product image mapping failed");
+      return { error: "Something went wrong. Please try again." };
+    }
+    const galleryIndex = imagesParsed.data.findIndex(
+      (gallery) => gallery.path === path,
+    );
+    const { error } = await supabase
+      .from("product_images")
+      .update({
+        image_url: image.url,
+        sort_order: galleryIndex >= 0 ? galleryIndex : imagesParsed.data.length,
+        is_cover: galleryIndex === 0,
+      })
+      .eq("id", id);
+    if (error) {
+      log.error("product image update failed", { code: error.code });
       return { error: "Something went wrong. Please try again." };
     }
   }
@@ -226,21 +294,47 @@ export async function saveProductAction(
     name: sh.name,
     color_hex: sh.color_hex ?? null,
     is_available: sh.is_available,
-    image_id: null,
+    image_id: sh.image ? imageIdByPath.get(sh.image.path) ?? null : null,
     sort_order: i,
   }));
 
-  const { error: shadesError } = isUpdate
-    ? await supabase.from("product_shades").delete().eq("product_id", data.id)
-    : { error: null };
+  const { error: shadesError } = await supabase
+    .from("product_shades")
+    .delete()
+    .eq("product_id", data.id);
   if (shadesError) {
-    log.error("shade replace failed", shadesError);
+    log.error("shade replace failed", { code: shadesError.code });
+    return { error: "Something went wrong. Please try again." };
   }
   if (shades.length > 0) {
     const { error } = await supabase.from("product_shades").insert(shades);
     if (error) {
-      log.error("shade insert failed", error);
+      log.error("shade insert failed", { code: error.code });
       return { error: "Something went wrong. Please try again." };
+    }
+  }
+
+  const desiredPaths = new Set(desiredByPath.keys());
+  const removedImages = (currentImages ?? []).filter(
+    (image) => !desiredPaths.has(image.storage_path),
+  );
+  if (removedImages.length > 0) {
+    const { error } = await supabase
+      .from("product_images")
+      .delete()
+      .in(
+        "id",
+        removedImages.map((image) => image.id),
+      );
+    if (error) {
+      log.error("unused product image cleanup failed", { code: error.code });
+      return { error: "Product saved, but an unused photo could not be removed." };
+    }
+    const { error: storageError } = await supabase.storage
+      .from("product-images")
+      .remove(removedImages.map((image) => image.storage_path));
+    if (storageError) {
+      log.warn("unused product storage cleanup failed", { code: storageError.name });
     }
   }
 
@@ -274,29 +368,37 @@ export async function deleteProductAction(
     .eq("id", id.data)
     .maybeSingle();
   const slug = row?.slug;
+  if (!slug) {
+    return { error: "This product no longer exists." };
+  }
 
-  const { data: images } = await supabase
+  const { data: images, error: imageLookupError } = await supabase
     .from("product_images")
     .select("storage_path")
     .eq("product_id", id.data);
-  const paths = (images ?? []).map((i) => i.storage_path).filter(Boolean);
-  if (paths.length > 0) {
-    const { error: rmError } = await supabase.storage
-      .from("product-images")
-      .remove(paths);
-    if (rmError) log.warn("storage remove failed", rmError);
+  if (imageLookupError) {
+    log.error("product delete image lookup failed", { code: imageLookupError.code });
+    return { error: "Something went wrong. Please try again." };
   }
 
   const { error } = await supabase.from("products").delete().eq("id", id.data);
   if (error) {
-    log.error("product delete failed", error);
+    log.error("product delete failed", { code: error.code });
     return { error: "Something went wrong. Please try again." };
   }
 
-  if (slug) {
-    revalidatePath("/");
-    revalidatePath(`/product/${slug}`);
+  const paths = (images ?? []).map((image) => image.storage_path);
+  if (paths.length > 0) {
+    const { error: rmError } = await supabase.storage
+      .from("product-images")
+      .remove(paths);
+    if (rmError) log.warn("product storage cleanup failed", { code: rmError.name });
   }
+  updateTag("public-catalog");
+  revalidatePath("/");
+  revalidatePath(`/product/${slug}`);
+  revalidatePath("/categories");
+  revalidatePath("/categories/[slug]", "page");
   revalidatePath("/admin/products");
   return { slug: "/admin/products" };
 }
@@ -323,7 +425,7 @@ export async function duplicateProductAction(
   const { data: original } = await supabase
     .from("products")
     .select(
-      "name, category_id, description, price, discount_price, is_visible, in_stock, product_images(image_url, storage_path), product_shades(code, name, color_hex)",
+      "name, category_id, description, price, discount_price, is_visible, in_stock, product_images(id, image_url, storage_path, is_cover, sort_order), product_shades(code, name, color_hex, is_available, sort_order, image_id)",
     )
     .eq("id", id.data)
     .maybeSingle();
@@ -354,19 +456,60 @@ export async function duplicateProductAction(
     slug,
   });
   if (error) {
-    log.error("duplicate failed", error);
+    log.error("product duplicate failed", { code: error.code });
     return { error: "Something went wrong. Please try again." };
   }
 
-  const images = (original.product_images ?? []).map((img, i) => ({
-    product_id: newId,
-    image_url: img.image_url,
-    storage_path: img.storage_path,
-    sort_order: i,
-    is_cover: i === 0,
-  }));
+  const sourceImages = original.product_images ?? [];
+  const copiedPaths: string[] = [];
+  const imageIdByOriginalId = new Map<string, string>();
+  const originalIdByNewPath = new Map<string, string>();
+  const images = [];
+  const supabaseUrl = process.env.SUPABASE_URL;
+  for (const [i, img] of sourceImages.entries()) {
+    const fileName = img.storage_path.split("/").pop();
+    if (!fileName || !supabaseUrl) {
+      log.error("product duplicate image path invalid");
+      await supabase.from("products").delete().eq("id", newId);
+      return { error: "A product photo could not be copied." };
+    }
+    const path = `products/${newId}/${img.storage_path.includes("/shades/") ? "shades/" : ""}${fileName}`;
+    const { error: copyError } = await supabase.storage
+      .from("product-images")
+      .copy(img.storage_path, path);
+    if (copyError) {
+      log.error("product duplicate image copy failed", { code: copyError.name });
+      if (copiedPaths.length > 0) {
+        await supabase.storage.from("product-images").remove(copiedPaths);
+      }
+      await supabase.from("products").delete().eq("id", newId);
+      return { error: "A product photo could not be copied." };
+    }
+    copiedPaths.push(path);
+    originalIdByNewPath.set(path, img.id);
+    images.push({
+      product_id: newId,
+      image_url: `${supabaseUrl}${STORAGE_PREFIX}${path}`,
+      storage_path: path,
+      sort_order: img.sort_order ?? i,
+      is_cover: img.is_cover,
+    });
+  }
   if (images.length > 0) {
-    await supabase.from("product_images").insert(images);
+    const { data: inserted, error: imageInsertError } = await supabase
+      .from("product_images")
+      .insert(images)
+      .select("id, storage_path");
+    if (imageInsertError) {
+      log.error("product duplicate image insert failed", { code: imageInsertError.code });
+      await supabase.storage.from("product-images").remove(copiedPaths);
+      await supabase.from("products").delete().eq("id", newId);
+      return { error: "Product could not be duplicated." };
+    }
+    for (const created of inserted ?? []) {
+      const originalId = originalIdByNewPath.get(created.storage_path);
+      if (originalId) imageIdByOriginalId.set(originalId, created.id);
+    }
   }
 
   const shades = (original.product_shades ?? []).map((sh, i) => ({
@@ -374,11 +517,20 @@ export async function duplicateProductAction(
     code: sh.code,
     name: sh.name,
     color_hex: sh.color_hex,
-    is_available: true,
+    is_available: sh.is_available,
     sort_order: i,
+    image_id: sh.image_id ? imageIdByOriginalId.get(sh.image_id) ?? null : null,
   }));
   if (shades.length > 0) {
-    await supabase.from("product_shades").insert(shades);
+    const { error: shadeInsertError } = await supabase
+      .from("product_shades")
+      .insert(shades);
+    if (shadeInsertError) {
+      log.error("product duplicate shade insert failed", { code: shadeInsertError.code });
+      await supabase.storage.from("product-images").remove(copiedPaths);
+      await supabase.from("products").delete().eq("id", newId);
+      return { error: "Product could not be duplicated." };
+    }
   }
 
   revalidatePath("/admin/products");
@@ -401,11 +553,14 @@ export async function moveCategoryAction(
     .update({ category_id: categoryId.data })
     .eq("id", productId.data);
   if (error) {
-    log.error("move category failed", error);
+    log.error("product category move failed", { code: error.code });
     return { error: "Something went wrong. Please try again." };
   }
+  updateTag("public-catalog");
   revalidatePath("/admin/products");
   revalidatePath("/");
+  revalidatePath("/categories");
+  revalidatePath("/categories/[slug]", "page");
   return { slug: "/admin/products" };
 }
 
@@ -420,6 +575,14 @@ export async function deleteImageAction(
     return { error: "Something went wrong. Please try again." };
   }
   const supabase = await supabaseServer();
+  const { data: product } = await supabase
+    .from("products")
+    .select("slug")
+    .eq("id", productId.data)
+    .maybeSingle();
+  if (!product) {
+    return { error: "This product no longer exists." };
+  }
   const belongs = await imageBelongsToProduct(supabase, productId.data, imageId.data);
   if (!belongs) {
     return { error: "Something went wrong. Please try again." };
@@ -429,13 +592,24 @@ export async function deleteImageAction(
     .select("storage_path")
     .eq("id", imageId.data)
     .maybeSingle();
+  const { error: deleteError } = await supabase
+    .from("product_images")
+    .delete()
+    .eq("id", imageId.data);
+  if (deleteError) {
+    log.error("product image delete failed", { code: deleteError.code });
+    return { error: "Something went wrong. Please try again." };
+  }
   if (img?.storage_path) {
     const { error } = await supabase.storage
       .from("product-images")
       .remove([img.storage_path]);
-    if (error) log.warn("storage remove failed", error);
+    if (error) log.warn("product image cleanup failed", { code: error.name });
   }
-  await supabase.from("product_images").delete().eq("id", imageId.data);
+  updateTag("public-catalog");
+  revalidatePath("/");
+  revalidatePath(`/product/${product.slug}`);
+  revalidatePath("/categories/[slug]", "page");
   revalidatePath("/admin/products");
   return { slug: "/admin/products" };
 }

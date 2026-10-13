@@ -22,6 +22,7 @@ export default function ProductCard({ product }: { product: ProductCardRow }) {
             src={product.cover_url}
             alt={product.name}
             fill
+            unoptimized
             sizes="(min-width: 1024px) 25vw, (min-width: 768px) 33vw, 50vw"
             className="object-contain"
           />
@@ -45,6 +46,17 @@ export default function ProductCard({ product }: { product: ProductCardRow }) {
         <h3 className="clamp-2 text-sm font-bold leading-snug md:text-[15px]">
           {product.name}
         </h3>
+        {product.shade_colors.length > 0 ? (
+          <div className="mt-1 flex items-center gap-1" aria-label="Available shades">
+            {product.shade_colors.slice(0, 6).map((color, index) => (
+              <span
+                key={`${color}-${index}`}
+                className="h-3.5 w-3.5 rounded-full border"
+                style={{ background: color, borderColor: "var(--line)" }}
+              />
+            ))}
+          </div>
+        ) : null}
         <p className="mt-auto pt-1 text-sm md:text-[15px]">
           <b style={{ fontWeight: 700 }}>{formatMoney(price)}</b>
           {percent > 0 && product.discount_price !== null ? (

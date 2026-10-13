@@ -69,8 +69,18 @@ export async function POST(request: Request): Promise<NextResponse> {
     return NextResponse.json({ error: "Bad request" }, { status: 400 });
   }
 
-  const productId = z.string().uuid().safeParse(form.get("productId"));
-  if (!productId.success) {
+  const purpose = z.enum(["product", "shade", "category"]).safeParse(
+    form.get("purpose") ?? "product",
+  );
+  if (!purpose.success) {
+    return NextResponse.json({ error: "Bad request" }, { status: 400 });
+  }
+
+  const productId =
+    purpose.data === "category"
+      ? null
+      : z.string().uuid().safeParse(form.get("productId"));
+  if (productId && !productId.success) {
     return NextResponse.json({ error: "Bad request" }, { status: 400 });
   }
 
@@ -92,17 +102,33 @@ export async function POST(request: Request): Promise<NextResponse> {
   }
 
   const supabase = await supabaseServer();
-  const { count } = await supabase
-    .from("product_images")
-    .select("id", { count: "exact", head: true })
-    .eq("product_id", productId.data);
-  const existingStored = await supabase.storage
-    .from("product-images")
-    .list(`products/${productId.data}`);
-  const storedCount =
-    (existingStored.data ?? []).filter((f) => f.name !== "").length;
-  if ((count ?? 0) >= MAX_PHOTOS || storedCount >= MAX_PHOTOS + 4) {
-    return NextResponse.json({ error: "Too many photos" }, { status: 422 });
+  if (productId) {
+    const { data: productImages, error: countError } = await supabase
+      .from("product_images")
+      .select("storage_path")
+      .eq("product_id", productId.data);
+    if (countError) {
+      log.warn("upload image count failed", { code: countError.code });
+      return NextResponse.json({ error: "Upload failed" }, { status: 500 });
+    }
+    const existingStored = await supabase.storage
+      .from("product-images")
+      .list(`products/${productId.data}`);
+    if (existingStored.error) {
+      log.warn("upload storage listing failed", { code: existingStored.error.name });
+      return NextResponse.json({ error: "Upload failed" }, { status: 500 });
+    }
+    const storedCount =
+      (existingStored.data ?? []).filter((f) => f.name !== "").length;
+    const galleryImageCount = (productImages ?? []).filter(
+      (image) => !image.storage_path.includes("/shades/"),
+    ).length;
+    if (purpose.data === "product" && galleryImageCount >= MAX_PHOTOS) {
+      return NextResponse.json({ error: "Too many photos" }, { status: 422 });
+    }
+    if (purpose.data === "product" && storedCount >= MAX_PHOTOS + 4) {
+      return NextResponse.json({ error: "Too many photos" }, { status: 422 });
+    }
   }
 
   let out: Buffer;
@@ -118,11 +144,16 @@ export async function POST(request: Request): Promise<NextResponse> {
       .webp({ quality: 82 })
       .toBuffer();
   } catch (error) {
-    log.error("upload re-encode failed", error);
+    log.error("upload re-encode failed", {
+      code: error instanceof Error ? error.name : "unknown",
+    });
     return NextResponse.json({ error: "Unsupported image" }, { status: 415 });
   }
 
-  const path = `products/${productId.data}/${crypto.randomUUID()}.webp`;
+  const path =
+    purpose.data === "category"
+      ? `categories/${crypto.randomUUID()}.webp`
+      : `products/${productId?.data}/${purpose.data === "shade" ? "shades/" : ""}${crypto.randomUUID()}.webp`;
   const { error: uploadError } = await supabase.storage
     .from("product-images")
     .upload(path, out, {
@@ -136,7 +167,10 @@ export async function POST(request: Request): Promise<NextResponse> {
   }
 
   const supabaseUrl = process.env.SUPABASE_URL ?? "";
-  const publicUrl = `${supabaseUrl}/storage/v1/object/public/product-images/${path}`;
+  const publicUrl = new URL(
+    `/storage/v1/object/public/product-images/${path}`,
+    supabaseUrl,
+  ).toString();
 
   return NextResponse.json({ url: publicUrl, path });
 }
