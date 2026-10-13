@@ -21,7 +21,7 @@ create table if not exists public.products (
   name text not null,
   slug text not null unique,
   description text,
-  price numeric(10,2) not null check (price >= 0),
+  price numeric(10,2) check (price is null or price >= 0),
   discount_price numeric(10,2) check (discount_price is null or (discount_price >= 0 and discount_price < price)),
   is_visible boolean not null default true,
   in_stock boolean not null default true,

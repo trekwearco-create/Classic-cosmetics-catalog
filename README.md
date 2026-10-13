@@ -41,6 +41,11 @@ project settings yourself. The repository contains no keys.
 2. Run `sql/001_tables.sql`, `sql/002_rls_and_policies.sql`,
    `sql/003_search_function.sql`, `sql/004_storage_and_admin.sql` in the SQL
    editor, in that order.
+   If the database was already created with an older schema, also run
+   `supabase/migrations/20261013000500_make_products_price_optional.sql` in the
+   SQL editor. Product creation does not collect a price, so this migration
+   removes the old required-price constraint. Vercel deployments do not apply
+   Supabase migrations automatically.
 3. **Storage**: create a **public** bucket named `product-images`
    (Dashboard → Storage → New bucket). It is public read; writes are admin-only.
 4. **Authentication**: disable public sign-ups; turn on email confirmation.

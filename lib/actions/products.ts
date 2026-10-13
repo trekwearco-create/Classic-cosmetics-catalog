@@ -198,6 +198,12 @@ export async function saveProductAction(
 
   if (productError) {
     log.error("product save failed", { code: productError.code });
+    if (productError.code === "23502") {
+      return {
+        error:
+          "The product database needs an update. Apply the latest Supabase migration, then try again.",
+      };
+    }
     return { error: "Something went wrong. Please try again." };
   }
 
