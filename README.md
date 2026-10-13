@@ -18,14 +18,15 @@ npm run dev                       # http://localhost:3000
 
 ## Environment variables
 
-`.env.example` contains only names. Copy it to `.env.local` and add:
+`.env.example` contains placeholder values only. Copy it to `.env.local` and
+replace them with your project settings:
 
 | Variable | Purpose |
 |---|---|
 | `SUPABASE_URL` | Supabase project URL (no key) |
 | `SUPABASE_ANON_KEY` | Supabase anon key |
 | `SITE_URL` | Public URL, e.g. `https://classic-cosmetics.vercel.app` |
-| `WHATSAPP_NUMBER` | Default `923222495034` (international form of 03222495034) |
+| `WHATSAPP_NUMBER` | WhatsApp phone number in international digits-only format |
 | `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | **Only** public variable; the Turnstile site key for `/admin/login` |
 | `TURNSTILE_SECRET_KEY` | Turnstile secret key (server only) - used to verify the widget on the server |
 | `UPSTASH_REDIS_REST_URL` | Free Upstash Redis URL for login/upload rate limits (optional) |
