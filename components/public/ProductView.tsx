@@ -2,11 +2,12 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import type { ProductDetail } from "@/lib/data";
 
 type ProductShade = ProductDetail["shades"][number];
+type ImageViewer = typeof import("./ProductImageViewer").default;
 
 export default function ProductView({
   product,
@@ -19,6 +20,12 @@ export default function ProductView({
 }) {
   const [selectedShade, setSelectedShade] = useState<ProductShade | null>(null);
   const [shadeMenuOpen, setShadeMenuOpen] = useState(false);
+  const [ImageViewerComponent, setImageViewerComponent] =
+    useState<ImageViewer | null>(null);
+  const [viewerIndex, setViewerIndex] = useState<number | null>(null);
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const pointerStartRef = useRef<{ x: number; y: number } | null>(null);
+  const pointerMovedRef = useRef(false);
   const baseImage = product.images[0]?.url ?? null;
   const mainImage = selectedShade?.image_url ?? baseImage;
   const galleryImages = [
@@ -42,6 +49,21 @@ export default function ProductView({
     setShadeMenuOpen(false);
   }
 
+  async function openViewer(
+    index: number,
+    trigger: HTMLButtonElement,
+  ) {
+    triggerRef.current = trigger;
+    const { default: Viewer } = await import("./ProductImageViewer");
+    setImageViewerComponent(() => Viewer);
+    setViewerIndex(index);
+  }
+
+  function closeViewer() {
+    setViewerIndex(null);
+    requestAnimationFrame(() => triggerRef.current?.focus());
+  }
+
   return (
     <main className="product-detail-layout mt-4 pb-28 md:mt-8 md:pb-10">
       <div className="product-gallery" aria-label={`Images of ${product.name}`}>
@@ -49,16 +71,52 @@ export default function ProductView({
           <div className="product-gallery-track" key={mainImage ?? "empty"}>
             {galleryImages.map((url, index) => (
               <div className="product-gallery-slide" key={`${url}-${index}`}>
-                <Image
-                  src={url}
-                  alt={`${product.name}${index ? `, image ${index + 1}` : ""}`}
-                  fill
-                  priority={index === 0}
-                  loading={index === 0 ? "eager" : "lazy"}
-                  unoptimized
-                  sizes="(min-width: 768px) 55vw, 100vw"
-                  className="object-contain"
-                />
+                <button
+                  ref={index === 0 ? triggerRef : undefined}
+                  type="button"
+                  className="product-photo-trigger"
+                  aria-label="Open photo in full screen"
+                  onPointerDown={(event) => {
+                    pointerStartRef.current = {
+                      x: event.clientX,
+                      y: event.clientY,
+                    };
+                    pointerMovedRef.current = false;
+                  }}
+                  onPointerMove={(event) => {
+                    const start = pointerStartRef.current;
+                    if (
+                      start &&
+                      (Math.abs(event.clientX - start.x) >= 8 ||
+                        Math.abs(event.clientY - start.y) >= 8)
+                    ) {
+                      pointerMovedRef.current = true;
+                    }
+                  }}
+                  onPointerCancel={() => {
+                    pointerMovedRef.current = true;
+                  }}
+                  onClick={(event) => {
+                    if (pointerMovedRef.current && event.detail !== 0) {
+                      event.preventDefault();
+                      pointerMovedRef.current = false;
+                      return;
+                    }
+                    pointerMovedRef.current = false;
+                    void openViewer(index, event.currentTarget);
+                  }}
+                >
+                  <Image
+                    src={url}
+                    alt={`${product.name}${index ? `, image ${index + 1}` : ""}`}
+                    fill
+                    priority={index === 0}
+                    loading={index === 0 ? "eager" : "lazy"}
+                    unoptimized
+                    sizes="(min-width: 768px) 55vw, 100vw"
+                    className="object-contain"
+                  />
+                </button>
               </div>
             ))}
           </div>
@@ -233,6 +291,16 @@ export default function ProductView({
           </a>
         )}
       </div>
+      {viewerIndex !== null && ImageViewerComponent ? (
+        <ImageViewerComponent
+          images={galleryImages.map((src, index) => ({
+            src,
+            alt: `${product.name}${index ? `, image ${index + 1}` : ""}`,
+          }))}
+          initialIndex={viewerIndex}
+          onClose={closeViewer}
+        />
+      ) : null}
 
       <div className="mobile-buy-bar md:hidden">
         {orderDisabled ? (
