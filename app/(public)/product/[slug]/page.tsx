@@ -23,11 +23,9 @@ export default async function ProductPage({ params }: Props) {
   const product = await getProductBySlug(slug);
   if (!product) notFound();
 
-  const price = product.discount_price ?? product.price;
   const productPath = productLinkPath(product.slug);
   const orderUrl = buildWhatsAppUrl({
     name: product.name,
-    price,
     productPath,
   });
   const shadeOrderUrls = Object.fromEntries(
@@ -36,7 +34,6 @@ export default async function ProductPage({ params }: Props) {
       buildWhatsAppUrl({
         name: product.name,
         shade: `${shade.code ? `${shade.code} ` : ""}${shade.name}`,
-        price,
         productPath,
       }),
     ]),

@@ -29,7 +29,7 @@ export default async function EditProductPage({
       <h1 className="mb-2 text-2xl" style={{ fontFamily: "var(--font-display)" }}>
         Edit product
       </h1>
-      <p className="mb-6 text-sm" style={{ color: "rgba(0,0,0,.68)" }}>
+      <p className="mb-6 text-sm" style={{ color: "var(--ink-2)" }}>
         Public page: <Link href={`/product/${product.slug}`}>/product/{product.slug}</Link>
       </p>
       <ProductForm
@@ -40,9 +40,6 @@ export default async function EditProductPage({
           name: product.name,
           slug: product.slug,
           description: product.description ?? "",
-          price: String(product.price),
-          discount_price:
-            product.discount_price === null ? "" : String(product.discount_price),
           is_visible: product.is_visible,
           in_stock: product.in_stock,
           category_id: product.category_id,

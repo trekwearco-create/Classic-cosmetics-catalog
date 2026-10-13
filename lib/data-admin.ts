@@ -43,8 +43,6 @@ export type AdminProductRow = {
   id: string;
   name: string;
   slug: string;
-  price: number;
-  discount_price: number | null;
   is_visible: boolean;
   in_stock: boolean;
   category_name: string;
@@ -59,7 +57,7 @@ export async function listProductsAdmin(filters?: {
   let query = supabase
     .from("products")
     .select(
-      "id, name, slug, price, discount_price, is_visible, in_stock, categories(name), product_images(image_url, is_cover, sort_order)",
+      "id, name, slug, is_visible, in_stock, categories(name), product_images(image_url, is_cover, sort_order)",
     )
     .order("created_at", { ascending: false });
 
@@ -79,8 +77,6 @@ export async function listProductsAdmin(filters?: {
       id: string;
       name: string;
       slug: string;
-      price: number | string;
-      discount_price: number | string | null;
       is_visible: boolean;
       in_stock: boolean;
       categories: { name: string } | null;
@@ -94,9 +90,6 @@ export async function listProductsAdmin(filters?: {
       id: r.id,
       name: r.name,
       slug: r.slug,
-      price: Number(r.price),
-      discount_price:
-        r.discount_price === null ? null : Number(r.discount_price),
       is_visible: r.is_visible,
       in_stock: r.in_stock,
       category_name: r.categories?.name ?? "",
@@ -110,8 +103,6 @@ export type AdminProduct = {
   name: string;
   slug: string;
   description: string | null;
-  price: number;
-  discount_price: number | null;
   is_visible: boolean;
   in_stock: boolean;
   category_id: string;
@@ -134,7 +125,7 @@ export async function getProductAdmin(
   const { data, error } = await supabase
     .from("products")
     .select(
-      "id, name, slug, description, price, discount_price, is_visible, in_stock, category_id",
+      "id, name, slug, description, is_visible, in_stock, category_id",
     )
     .eq("id", id)
     .maybeSingle();
@@ -145,8 +136,6 @@ export async function getProductAdmin(
     name: string;
     slug: string;
     description: string | null;
-    price: number | string;
-    discount_price: number | string | null;
     is_visible: boolean;
     in_stock: boolean;
     category_id: string;
@@ -183,9 +172,6 @@ export async function getProductAdmin(
     name: product.name,
     slug: product.slug,
     description: product.description,
-    price: Number(product.price),
-    discount_price:
-      product.discount_price === null ? null : Number(product.discount_price),
     is_visible: product.is_visible,
     in_stock: product.in_stock,
     category_id: product.category_id,

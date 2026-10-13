@@ -69,13 +69,13 @@ export default function CategoriesManager({
 
       {categories.length === 0 ? (
         <div className="card p-8 text-center">
-          <p style={{ color: "rgba(0,0,0,.68)" }}>No categories yet.</p>
+          <p style={{ color: "var(--ink-2)" }}>No categories yet.</p>
         </div>
       ) : (
         <div className="card overflow-x-auto">
           <table className="w-full min-w-[560px] text-left text-sm">
             <thead>
-              <tr style={{ background: "var(--blush)" }}>
+              <tr style={{ background: "var(--linen)" }}>
                 <th className="px-4 py-3 font-bold">Name</th>
                 <th className="px-4 py-3 font-bold">Products</th>
                 <th className="px-4 py-3 font-bold">Order</th>
@@ -124,7 +124,7 @@ export default function CategoriesManager({
       {showForm ? (
         <div
           className="fixed inset-0 z-40 flex items-center justify-center p-4"
-          style={{ background: "rgba(0,0,0,.35)" }}
+          style={{ background: "rgba(26,24,20,.35)" }}
           role="dialog"
           aria-modal="true"
         >
@@ -167,7 +167,7 @@ export default function CategoriesManager({
               {saveState.error ? (
                 <p
                   className="text-sm font-semibold"
-                  style={{ color: "var(--rose)" }}
+                  style={{ color: "var(--brick)" }}
                   role="alert"
                 >
                   {saveState.error}
@@ -200,7 +200,7 @@ export default function CategoriesManager({
       {deleting ? (
         <div
           className="fixed inset-0 z-40 flex items-center justify-center p-4"
-          style={{ background: "rgba(0,0,0,.35)" }}
+          style={{ background: "rgba(26,24,20,.35)" }}
           role="dialog"
           aria-modal="true"
         >
@@ -209,7 +209,7 @@ export default function CategoriesManager({
             {deleteState.error ? (
               <p
                 className="mb-3 text-sm font-semibold"
-                style={{ color: "var(--rose)" }}
+                style={{ color: "var(--brick)" }}
                 role="alert"
               >
                 {deleteState.error}

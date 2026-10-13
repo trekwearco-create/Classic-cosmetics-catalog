@@ -38,7 +38,7 @@ export default async function AdminDashboardPage() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         {stats.map((s) => (
           <div key={s.label} className="card p-5">
-            <p className="text-sm" style={{ color: "rgba(0,0,0,.68)" }}>
+            <p className="text-sm" style={{ color: "var(--ink-2)" }}>
               {s.label}
             </p>
             <p className="mt-1 text-3xl font-bold">{s.value}</p>

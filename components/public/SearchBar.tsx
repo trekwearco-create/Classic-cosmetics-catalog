@@ -28,7 +28,8 @@ export default function SearchBar() {
       onSubmit={(e) => e.preventDefault()}
     >
       <input
-        className="field !rounded-full pl-11"
+        className="field !rounded-full"
+        style={{ paddingLeft: 44, paddingRight: 44 }}
         type="search"
         value={value}
         onChange={(e) => update(e.target.value)}
@@ -40,8 +41,8 @@ export default function SearchBar() {
         aria-hidden="true"
         className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2"
       >
-        <circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="#000" strokeWidth="2" />
-        <path d="M15.5 15.5L21 21" stroke="#000" strokeWidth="2" strokeLinecap="round" />
+        <circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="#1A1814" strokeWidth="2" />
+        <path d="M15.5 15.5L21 21" stroke="#1A1814" strokeWidth="2" strokeLinecap="round" />
       </svg>
       {value !== "" ? (
         <button
@@ -49,7 +50,7 @@ export default function SearchBar() {
           aria-label="Clear search"
           onClick={() => update("")}
           className="absolute right-3 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full text-lg font-bold"
-          style={{ color: "rgba(0,0,0,.68)" }}
+          style={{ color: "var(--ink-2)" }}
         >
           ×
         </button>

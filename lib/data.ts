@@ -27,8 +27,6 @@ export type ProductCardRow = {
   id: string;
   slug: string;
   name: string;
-  price: number;
-  discount_price: number | null;
   in_stock: boolean;
   category_name: string;
   cover_url: string | null;
@@ -95,8 +93,6 @@ async function loadProductCards({
       slug: string;
       name: string;
       category_id: string;
-      price: number | string;
-      discount_price: number | string | null;
       in_stock: boolean;
     }>;
 
@@ -157,9 +153,6 @@ async function loadProductCards({
       id: r.id,
       slug: r.slug,
       name: r.name,
-      price: Number(r.price),
-      discount_price:
-        r.discount_price === null ? null : Number(r.discount_price),
       in_stock: r.in_stock,
       category_name: categoryNameById.get(r.category_id) ?? "",
       cover_url:
@@ -188,8 +181,6 @@ export type ProductDetail = {
   slug: string;
   name: string;
   description: string | null;
-  price: number;
-  discount_price: number | null;
   in_stock: boolean;
   category_name: string;
   category_slug: string;
@@ -213,7 +204,7 @@ async function loadProductBySlug(
     const { data, error } = await supabase
       .from("products")
       .select(
-        "id, slug, name, description, price, discount_price, in_stock, category_id, categories(name, slug)",
+        "id, slug, name, description, in_stock, category_id, categories(name, slug)",
       )
       .eq("slug", slug)
       .eq("is_visible", true)
@@ -225,8 +216,6 @@ async function loadProductBySlug(
       slug: string;
       name: string;
       description: string | null;
-      price: number | string;
-      discount_price: number | string | null;
       in_stock: boolean;
       categories: { name: string; slug: string } | null;
     };
@@ -264,9 +253,6 @@ async function loadProductBySlug(
       slug: product.slug,
       name: product.name,
       description: product.description,
-      price: Number(product.price),
-      discount_price:
-        product.discount_price === null ? null : Number(product.discount_price),
       in_stock: product.in_stock,
       category_name: product.categories?.name ?? "",
       category_slug: product.categories?.slug ?? "",

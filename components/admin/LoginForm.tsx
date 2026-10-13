@@ -47,7 +47,7 @@ export default function LoginForm({ turnstileEnabled }: { turnstileEnabled: bool
           />
         ) : null}
         {state.error ? (
-          <p className="text-sm font-semibold" style={{ color: "var(--rose)" }} role="alert">
+          <p className="text-sm font-semibold" style={{ color: "var(--brick)" }} role="alert">
             {state.error}
           </p>
         ) : null}

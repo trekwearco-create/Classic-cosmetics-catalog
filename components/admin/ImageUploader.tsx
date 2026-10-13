@@ -115,7 +115,7 @@ export default function ImageUploader({
               width={320}
               height={320}
               className="h-full w-full object-contain"
-              style={{ background: "var(--blush)" }}
+              style={{ background: "var(--linen)" }}
               unoptimized
             />
             {purpose === "product" && i === 0 ? (
@@ -134,7 +134,7 @@ export default function ImageUploader({
             {item.progress === "error" ? (
               <div
                 className="absolute inset-x-0 bottom-0 p-1 text-center text-[10px] font-semibold"
-                style={{ background: "var(--rose)", color: "var(--white)" }}
+                style={{ background: "var(--brick)", color: "var(--white)" }}
               >
                 Failed
               </div>
@@ -160,7 +160,7 @@ export default function ImageUploader({
                 onClick={() => remove(i)}
                 disabled={busy}
                 className="rounded px-1.5 py-0.5 text-xs font-bold"
-                style={{ color: "var(--rose)" }}
+                style={{ color: "var(--brick)" }}
               >
                 ✕
               </button>
@@ -184,7 +184,7 @@ export default function ImageUploader({
             onClick={() => inputRef.current?.click()}
             disabled={busy}
             className="grid aspect-square place-items-center rounded-xl border text-sm font-semibold"
-            style={{ borderColor: "var(--line)", background: "var(--blush)" }}
+            style={{ borderColor: "var(--line)", background: "var(--linen)" }}
           >
             <span>
               {busy ? "Uploading" : purpose === "shade" && items.length > 0 ? "Replace" : "+ Add"}
@@ -208,11 +208,11 @@ export default function ImageUploader({
         }}
       />
       {error ? (
-        <p className="mt-2 text-sm font-semibold" style={{ color: "var(--rose)" }} role="alert">
+        <p className="mt-2 text-sm font-semibold" style={{ color: "var(--brick)" }} role="alert">
           {error}
         </p>
       ) : null}
-      <p className="mt-2 text-xs" style={{ color: "rgba(0,0,0,.68)" }}>
+      <p className="mt-2 text-xs" style={{ color: "var(--ink-2)" }}>
         {purpose === "shade"
           ? "Upload a separate photo for this shade. Replacing or removing it takes effect when the product is saved."
           : "The first photo becomes the cover. Use the arrows to reorder or ✕ to delete."}

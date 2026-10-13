@@ -46,10 +46,12 @@ export function parseBulkShades(text: string): ShadeRow[] {
 export default function ShadeEditor({
   shades,
   onChange,
+  onPendingChange,
   productId,
 }: {
   shades: ShadeRow[];
   onChange: (rows: ShadeRow[]) => void;
+  onPendingChange: (pending: boolean) => void;
   productId: string;
 }) {
   const [bulkOpen, setBulkOpen] = useState(false);
@@ -119,7 +121,8 @@ export default function ShadeEditor({
                 type="checkbox"
                 checked={shade.is_available}
                 onChange={(e) => update(i, { is_available: e.target.checked })}
-                className="h-5 w-5 accent-black"
+                className="h-5 w-5"
+                style={{ accentColor: "var(--ink)" }}
               />
               {shade.is_available ? "Available" : "Unavailable"}
             </label>
@@ -148,7 +151,7 @@ export default function ShadeEditor({
                 aria-label="Delete shade"
                 onClick={() => onChange(shades.filter((_, j) => j !== i))}
                 className="rounded px-2 py-1.5 text-xs font-bold"
-                style={{ color: "var(--rose)" }}
+                style={{ color: "var(--brick)" }}
               >
                 ✕
               </button>
@@ -182,9 +185,13 @@ export default function ShadeEditor({
             className="field h-32 w-full py-2"
             placeholder={"201 Fiesta\n203 Real Red\n208 Terracotta"}
             value={bulkText}
-            onChange={(e) => setBulkText(e.target.value.slice(0, 6000))}
+            onChange={(e) => {
+              const value = e.target.value.slice(0, 6000);
+              setBulkText(value);
+              onPendingChange(value.trim() !== "");
+            }}
           />
-          <p className="mt-1 text-xs" style={{ color: "rgba(0,0,0,.68)" }}>
+          <p className="mt-1 text-xs" style={{ color: "var(--ink-2)" }}>
             One shade per line, for example 201 Fiesta. A single word becomes the name.
           </p>
           {bulkText.trim() !== "" ? (
@@ -202,7 +209,7 @@ export default function ShadeEditor({
                   </span>
                 ))}
               {parseBulkShades(bulkText).length > 8 ? (
-                <span className="text-sm" style={{ color: "rgba(0,0,0,.68)" }}>
+                <span className="text-sm" style={{ color: "var(--ink-2)" }}>
                   and {parseBulkShades(bulkText).length - 8} more
                 </span>
               ) : null}
@@ -216,6 +223,7 @@ export default function ShadeEditor({
                 const parsed = parseBulkShades(bulkText);
                 onChange([...shades, ...parsed]);
                 setBulkText("");
+                onPendingChange(false);
                 setBulkOpen(false);
               }}
             >
@@ -224,7 +232,11 @@ export default function ShadeEditor({
             <button
               className="btn-secondary !min-h-[44px] !px-4 text-sm"
               type="button"
-              onClick={() => setBulkOpen(false)}
+              onClick={() => {
+                setBulkText("");
+                onPendingChange(false);
+                setBulkOpen(false);
+              }}
             >
               Cancel
             </button>

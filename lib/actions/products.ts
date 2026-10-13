@@ -35,8 +35,6 @@ const productSchema = z.object({
   name: z.string().trim().min(2).max(120),
   category_id: z.string().uuid(),
   description: z.string().max(2000).nullish(),
-  price: z.coerce.number().min(0).max(999999.99),
-  discount_price: z.coerce.number().min(0).max(999999.99).nullish(),
   is_visible: z.boolean(),
   in_stock: z.boolean(),
   slug_locked_existing: z.boolean().optional(),
@@ -118,13 +116,7 @@ export async function saveProductAction(
 
   const parsed = productSchema.safeParse(payload);
   if (!parsed.success) {
-    const flat = parsed.error.issues[0]?.path?.join(".");
-    return {
-      error:
-        flat === "discount_price"
-          ? "Discounted price must be lower than the original price."
-          : "Check the highlighted fields and try again.",
-    };
+    return { error: "Check the highlighted fields and try again." };
   }
   const data = parsed.data;
 
@@ -177,14 +169,6 @@ export async function saveProductAction(
     return { error: "Choose a category to continue." };
   }
 
-  if (
-    data.discount_price !== undefined &&
-    data.discount_price !== null &&
-    data.discount_price >= data.price
-  ) {
-    return { error: "Discounted price must be lower than the original price." };
-  }
-
   const slugBase = slugify(data.name);
   let slug = isUpdate && productRow !== null ? productRow.slug : slugBase;
   if (!isUpdate) {
@@ -202,8 +186,6 @@ export async function saveProductAction(
     name: data.name,
     category_id: data.category_id,
     description: data.description ?? null,
-    price: data.price,
-    discount_price: data.discount_price ?? null,
     is_visible: data.is_visible,
     in_stock: data.in_stock,
   };
@@ -422,7 +404,7 @@ export async function duplicateProductAction(
   const { data: original } = await supabase
     .from("products")
     .select(
-      "name, category_id, description, price, discount_price, is_visible, in_stock, product_images(id, image_url, storage_path, is_cover, sort_order), product_shades(code, name, color_hex, is_available, sort_order, image_id)",
+      "name, category_id, description, is_visible, in_stock, product_images(id, image_url, storage_path, is_cover, sort_order), product_shades(code, name, color_hex, is_available, sort_order, image_id)",
     )
     .eq("id", id.data)
     .maybeSingle();
@@ -446,8 +428,6 @@ export async function duplicateProductAction(
     name: `${original.name} (copy)`,
     category_id: original.category_id,
     description: original.description,
-    price: original.price,
-    discount_price: original.discount_price,
     is_visible: false,
     in_stock: original.in_stock,
     slug,

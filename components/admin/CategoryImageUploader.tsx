@@ -48,7 +48,7 @@ export default function CategoryImageUploader({
     <div className="flex flex-col gap-2">
       <span className="text-sm font-semibold">Category image</span>
       <div className="flex items-center gap-3">
-        <div className="relative h-20 w-20 overflow-hidden rounded-full border bg-blush" style={{ borderColor: "var(--line)" }}>
+        <div className="relative h-20 w-20 overflow-hidden rounded-full border bg-linen" style={{ borderColor: "var(--line)" }}>
           {imageUrl ? (
             <Image src={imageUrl} alt="Category preview" fill unoptimized sizes="80px" className="object-cover" />
           ) : (
@@ -89,7 +89,7 @@ export default function CategoryImageUploader({
           event.target.value = "";
         }}
       />
-      {error ? <p className="text-sm font-semibold" role="alert" style={{ color: "var(--rose)" }}>{error}</p> : null}
+      {error ? <p className="text-sm font-semibold" role="alert" style={{ color: "var(--brick)" }}>{error}</p> : null}
       <p className="text-xs" style={{ color: "var(--ink-2)" }}>JPG, PNG or WebP; 5 MB maximum before compression.</p>
     </div>
   );

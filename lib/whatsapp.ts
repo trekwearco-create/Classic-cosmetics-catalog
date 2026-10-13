@@ -14,7 +14,6 @@ export function normalizeWhatsAppNumber(raw: string): string {
 export function buildWhatsAppUrl(input: {
   name: string;
   shade?: string;
-  price: number;
   productPath: string;
 }): string {
   const raw = normalizeNumber(env().WHATSAPP_NUMBER);
@@ -22,7 +21,6 @@ export function buildWhatsAppUrl(input: {
     "Assalam o Alaikum, I want to order:",
     `Product: ${input.name}`,
     ...(input.shade ? [`Shade: ${input.shade}`] : []),
-    `Price: Rs. ${input.price}`,
     `Link: ${new URL(input.productPath, env().SITE_URL).toString()}`,
   ];
   return `https://wa.me/${raw}?text=${encodeURIComponent(lines.join("\n"))}`;

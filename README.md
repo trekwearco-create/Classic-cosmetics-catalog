@@ -113,7 +113,17 @@ Also enable two-factor login for your GitHub, Vercel and Supabase accounts.
 
 ## Design
 
-Pink (`#F8D5E0`), blush (`#FCE9F0`), rose (`#C8326B`), white, black — light
-theme only. Body font Figtree, headings Bodoni Moda. Logo from
-`public/logo.png`; favicon is a rose crop from the same asset. See the UI/UX
-spec for the full token set.
+Sand and linen neutrals with white surfaces, charcoal text and small bronze
+accents. Body font Figtree, headings Bodoni Moda. Logo and favicon use assets
+from `public/`.
+
+## Shade selector regression check
+
+Open a visible product with shades at desktop and mobile widths. Confirm up to
+eight shades appear as selectable pills and larger shade lists as a dropdown;
+unavailable shades are visible but disabled. Confirm ordering is disabled until
+an available shade is selected, a linked shade photo becomes the first gallery
+image, and the WhatsApp message includes the selected shade. Open a product
+with no shades and confirm the selector is absent and ordering works directly.
+In the admin form, type into the bulk shade box and attempt to save without
+adding the pending shades; the form must explain that they must be added first.

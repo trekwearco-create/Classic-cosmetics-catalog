@@ -1,13 +1,14 @@
 @import "tailwindcss";
 
 :root {
-  --petal: #f8d5e0;
-  --blush: #fce9f0;
-  --rose: #c8326b;
+  --sand: #efe5d8;
+  --linen: #f7f1e8;
+  --bronze: #7a6a42;
+  --brick: #a63a2b;
   --white: #ffffff;
-  --ink: #000000;
-  --ink-2: rgba(0, 0, 0, 0.68);
-  --line: rgba(0, 0, 0, 0.14);
+  --ink: #1a1814;
+  --ink-2: rgba(26, 24, 20, 0.68);
+  --line: rgba(26, 24, 20, 0.14);
   --font-display: var(--font-bodoni), Didot, Georgia, serif;
   --font-ui: var(--font-figtree), system-ui, sans-serif;
   --radius-card: 14px;
@@ -25,9 +26,10 @@
 }
 
 @theme inline {
-  --color-petal: var(--petal);
-  --color-blush: var(--blush);
-  --color-rose: var(--rose);
+  --color-sand: var(--sand);
+  --color-linen: var(--linen);
+  --color-bronze: var(--bronze);
+  --color-brick: var(--brick);
   --color-surface: var(--white);
   --color-ink: var(--ink);
   --font-display: var(--font-display);
@@ -40,7 +42,7 @@ html {
 }
 
 body {
-  background: var(--petal);
+  background: var(--sand);
   color: var(--ink);
   font-family: var(--font-ui);
   font-size: 16px;
@@ -58,7 +60,7 @@ h3 {
 }
 
 :focus-visible {
-  outline: 3px solid var(--rose);
+  outline: 3px solid var(--bronze);
   outline-offset: 2px;
 }
 
@@ -85,6 +87,16 @@ button {
   padding: 0 clamp(12px, 4vw, 32px);
 }
 
+@media (max-width: 340px) {
+  .site-header-grid {
+    grid-template-columns: minmax(0, 1fr) 124px minmax(0, 1fr);
+  }
+
+  .header-category-link {
+    padding-inline: 0;
+  }
+}
+
 .clamp-2 {
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -101,7 +113,7 @@ button {
 .field {
   width: 100%;
   min-height: 48px;
-  border: 1px solid rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(26, 24, 20, 0.35);
   border-radius: var(--radius-field);
   background: var(--white);
   padding: 0 14px;
@@ -128,7 +140,7 @@ button {
 }
 
 .btn-primary:disabled {
-  background: var(--blush);
+  background: var(--linen);
   color: var(--ink-2);
   cursor: not-allowed;
 }
@@ -156,20 +168,9 @@ button {
   padding: 0 20px;
   border-radius: var(--radius-pill);
   font: 600 15px/1 var(--font-ui);
-  border: 2px solid var(--rose);
+  border: 2px solid var(--brick);
   background: var(--white);
-  color: var(--rose);
-}
-
-.badge-off {
-  display: inline-block;
-  font-size: 12px;
-  font-weight: 700;
-  line-height: 1;
-  padding: 6px 8px;
-  border-radius: var(--radius-badge);
-  background: var(--rose);
-  color: var(--white);
+  color: var(--brick);
 }
 
 .badge-out {
@@ -179,7 +180,7 @@ button {
   line-height: 1;
   padding: 6px 8px;
   border-radius: var(--radius-badge);
-  background: var(--blush);
+  background: var(--linen);
   border: 1px solid var(--line);
   color: var(--ink);
 }
@@ -194,7 +195,7 @@ button {
 }
 
 .skeleton {
-  background: var(--blush);
+  background: var(--linen);
   border-radius: var(--radius-card);
   animation: shimmer 1.4s ease-in-out infinite alternate;
 }
@@ -244,7 +245,7 @@ button {
   overflow: hidden;
   border: 1px solid var(--line);
   border-radius: var(--radius-card);
-  background: var(--white);
+  background: var(--linen);
   scroll-snap-align: center;
 }
 
@@ -254,7 +255,7 @@ button {
   place-items: center;
   border: 1px solid var(--line);
   border-radius: var(--radius-card);
-  background: var(--white);
+  background: var(--linen);
   color: var(--ink-2);
 }
 

@@ -29,8 +29,6 @@ export async function GET(request: Request): Promise<NextResponse> {
           slug: p.slug,
           name: p.name,
           category_name: p.category_name,
-          price: p.price,
-          discount_price: p.discount_price,
           in_stock: p.in_stock,
           cover_url: p.cover_url,
           shade_colors: p.shade_colors,

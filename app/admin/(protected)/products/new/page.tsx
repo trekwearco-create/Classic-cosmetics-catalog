@@ -23,8 +23,6 @@ export default async function NewProductPage() {
           name: "",
           slug: "",
           description: "",
-          price: "",
-          discount_price: "",
           is_visible: true,
           in_stock: true,
           category_id: "",

@@ -9,7 +9,7 @@ export default function CategoryCard({ category }: { category: CategoryRow }) {
       href={`/categories/${category.slug}`}
       className="flex min-w-0 flex-col items-center gap-2 text-center"
     >
-      <span className="relative aspect-square w-full overflow-hidden rounded-full border bg-blush" style={{ borderColor: "var(--line)" }}>
+      <span className="relative aspect-square w-full overflow-hidden rounded-full border bg-linen" style={{ borderColor: "var(--line)" }}>
         {category.image_url ? (
           <Image
             src={category.image_url}

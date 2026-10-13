@@ -10,7 +10,6 @@ import {
   saveProductAction,
 } from "@/lib/actions/products";
 import { notifyCatalogChanged } from "@/lib/catalog-sync";
-import { discountPercent } from "@/lib/price";
 
 type CategoryOption = { id: string; name: string };
 
@@ -19,8 +18,6 @@ export type ProductFormInitial = {
   name: string;
   slug: string;
   description: string;
-  price: string;
-  discount_price: string;
   is_visible: boolean;
   in_stock: boolean;
   category_id: string;
@@ -45,12 +42,11 @@ export default function ProductForm({
   const [name, setName] = useState(initial.name);
   const [categoryId, setCategoryId] = useState(initial.category_id);
   const [description, setDescription] = useState(initial.description);
-  const [price, setPrice] = useState(initial.price);
-  const [discountPrice, setDiscountPrice] = useState(initial.discount_price);
   const [isVisible, setIsVisible] = useState(initial.is_visible);
   const [inStock, setInStock] = useState(initial.in_stock);
   const [images, setImages] = useState<UploadItem[]>(initial.images);
   const [shades, setShades] = useState<ShadeRow[]>(initial.shades);
+  const [pendingShadeInput, setPendingShadeInput] = useState(false);
 
   const initialSnapshot = useMemo(
     () =>
@@ -58,8 +54,6 @@ export default function ProductForm({
         name: initial.name,
         categoryId: initial.category_id,
         description: initial.description,
-        price: initial.price,
-        discount_price: initial.discount_price,
         is_visible: initial.is_visible,
         in_stock: initial.in_stock,
         images: initial.images.map((i) => i.path),
@@ -74,14 +68,12 @@ export default function ProductForm({
         name,
         categoryId,
         description,
-        price,
-        discount_price: discountPrice,
         is_visible: isVisible,
         in_stock: inStock,
         images: images.filter((i) => i.progress === "done").map((i) => i.path),
         shades,
       }),
-    [name, categoryId, description, price, discountPrice, isVisible, inStock, images, shades],
+    [name, categoryId, description, isVisible, inStock, images, shades],
   );
 
   const dirty = currentSnapshot !== initialSnapshot;
@@ -94,15 +86,6 @@ export default function ProductForm({
     window.addEventListener("beforeunload", handler);
     return () => window.removeEventListener("beforeunload", handler);
   }, [dirty]);
-
-  const percent =
-    price !== "" && discountPrice !== "" && Number(price) > 0
-      ? discountPercent({ price: Number(price), discount_price: Number(discountPrice) })
-      : 0;
-  const discountInvalid =
-    discountPrice !== "" &&
-    price !== "" &&
-    Number(discountPrice) >= Number(price);
 
   useEffect(() => {
     const onBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -127,8 +110,12 @@ export default function ProductForm({
       setFormError("Fill in the name and choose a category.");
       return;
     }
-    if (discountInvalid) {
-      setFormError("Discounted price must be lower than the original price.");
+    if (pendingShadeInput) {
+      setFormError("Click Add these shades before saving, or clear the pending shade list.");
+      return;
+    }
+    if (shades.some((shade) => shade.name.trim() === "" && (shade.code.trim() !== "" || shade.color_hex !== "" || shade.image !== null))) {
+      setFormError("Add a name for each shade, or remove its blank row.");
       return;
     }
     if (images.some((i) => i.progress !== "done")) {
@@ -147,9 +134,6 @@ export default function ProductForm({
         name: name.trim(),
         category_id: categoryId,
         description: description.trim() === "" ? null : description.trim(),
-        price: price === "" ? 0 : Number(price),
-        discount_price:
-          discountPrice === "" ? null : Number(discountPrice),
         is_visible: isVisible,
         in_stock: inStock,
       }),
@@ -236,53 +220,14 @@ export default function ProductForm({
               ))}
             </select>
           </label>
-          <label className="flex flex-col gap-1 text-sm font-semibold">
-            Original price (Rs.)
-            <input
-              className="field"
-              type="number"
-              inputMode="decimal"
-              min={0}
-              step="0.01"
-              value={price}
-              onChange={(e) => setPrice(e.target.value)}
-            />
-          </label>
-          <label className="flex flex-col gap-1 text-sm font-semibold">
-            Discounted price (Rs.)
-            <span className="sr-only">
-              Discounted price must be lower than the original price.
-            </span>
-            <input
-              className={`field${discountInvalid ? " border-2" : ""}`}
-              style={discountInvalid ? { borderColor: "var(--rose)" } : undefined}
-              type="number"
-              inputMode="decimal"
-              min={0}
-              step="0.01"
-              value={discountPrice}
-              onChange={(e) => setDiscountPrice(e.target.value)}
-            />
-            {discountInvalid ? (
-              <span className="text-xs font-semibold" style={{ color: "var(--rose)" }}>
-                Discounted price must be lower than the original price.
-              </span>
-            ) : null}
-          </label>
-          <div
-            className="flex items-center gap-2 rounded-xl p-3 text-sm font-semibold"
-            style={{ background: "var(--blush)" }}
-          >
-            Discount
-            {percent > 0 ? `${percent}% OFF` : "none"}
-          </div>
           <div className="flex gap-6">
             <label className="flex items-center gap-2 text-sm font-semibold">
               <input
                 type="checkbox"
                 checked={isVisible}
                 onChange={(e) => setIsVisible(e.target.checked)}
-                className="h-5 w-5 accent-black"
+                className="h-5 w-5"
+                style={{ accentColor: "var(--ink)" }}
               />
               Visible on website
             </label>
@@ -291,7 +236,8 @@ export default function ProductForm({
                 type="checkbox"
                 checked={inStock}
                 onChange={(e) => setInStock(e.target.checked)}
-                className="h-5 w-5 accent-black"
+                className="h-5 w-5"
+                style={{ accentColor: "var(--ink)" }}
               />
               In stock
             </label>
@@ -325,12 +271,13 @@ export default function ProductForm({
         <ShadeEditor
           shades={shades}
           onChange={setShades}
+          onPendingChange={setPendingShadeInput}
           productId={initial.id}
         />
       </section>
 
       {formError ? (
-        <p className="text-sm font-bold" style={{ color: "var(--rose)" }} role="alert">
+        <p className="text-sm font-bold" style={{ color: "var(--brick)" }} role="alert">
           {formError}
         </p>
       ) : null}
@@ -370,7 +317,7 @@ export default function ProductForm({
       {!isNew && confirmDelete ? (
         <div
           className="fixed inset-0 z-40 flex items-center justify-center p-4"
-          style={{ background: "rgba(0,0,0,.35)" }}
+          style={{ background: "rgba(26,24,20,.35)" }}
           role="dialog"
           aria-modal="true"
         >

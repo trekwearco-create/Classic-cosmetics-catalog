@@ -10,7 +10,6 @@ import {
   duplicateProductAction,
 } from "@/lib/actions/products";
 import type { AdminProductRow } from "@/lib/data-admin";
-import { formatMoney } from "@/lib/price";
 
 export default function ProductsList({
   products,
@@ -84,17 +83,16 @@ export default function ProductsList({
 
       {products.length === 0 ? (
         <div className="card p-8 text-center">
-          <p style={{ color: "rgba(0,0,0,.68)" }}>No products found.</p>
+          <p style={{ color: "var(--ink-2)" }}>No products found.</p>
         </div>
       ) : (
         <>
           <div className="hidden overflow-x-auto md:block">
-            <table className="card w-full min-w-[720px] text-left text-sm">
+            <table className="card w-full min-w-[620px] text-left text-sm">
               <thead>
-                <tr style={{ background: "var(--blush)" }}>
+                <tr style={{ background: "var(--linen)" }}>
                   <th className="rounded-tl-xl px-4 py-3 font-bold">Product</th>
                   <th className="px-4 py-3 font-bold">Category</th>
-                  <th className="px-4 py-3 font-bold">Price</th>
                   <th className="px-4 py-3 font-bold">Status</th>
                   <th className="rounded-tr-xl px-4 py-3 font-bold">Actions</th>
                 </tr>
@@ -115,13 +113,13 @@ export default function ProductsList({
                             width={44}
                             height={44}
                             className="h-11 w-11 rounded-lg object-contain"
-                            style={{ background: "var(--blush)" }}
+                            style={{ background: "var(--linen)" }}
                             unoptimized
                           />
                         ) : (
                           <div
                             className="h-11 w-11 rounded-lg"
-                            style={{ background: "var(--blush)" }}
+                            style={{ background: "var(--linen)" }}
                           />
                         )}
                         <span className="font-semibold">{p.name}</span>
@@ -129,20 +127,12 @@ export default function ProductsList({
                     </td>
                     <td className="px-4 py-3">{p.category_name}</td>
                     <td className="px-4 py-3">
-                      <b>{formatMoney(p.discount_price ?? p.price)}</b>{" "}
-                      {p.discount_price !== null ? (
-                        <s style={{ color: "rgba(0,0,0,.68)" }}>
-                          {formatMoney(p.price)}
-                        </s>
-                      ) : null}
-                    </td>
-                    <td className="px-4 py-3">
                       <span
                         className="rounded px-2 py-1 text-xs font-bold"
                         style={
                           p.is_visible
                             ? { background: "var(--ink)", color: "var(--white)" }
-                            : { background: "var(--blush)", border: "1px solid var(--line)" }
+                            : { background: "var(--linen)", border: "1px solid var(--line)" }
                         }
                       >
                         {p.is_visible ? "Visible" : "Hidden"}
@@ -150,7 +140,7 @@ export default function ProductsList({
                       {!p.in_stock ? (
                         <span
                           className="rounded px-2 py-1 text-xs font-bold"
-                          style={{ background: "var(--blush)", border: "1px solid var(--line)" }}
+                          style={{ background: "var(--linen)", border: "1px solid var(--line)" }}
                         >
                           Out of stock
                         </span>
@@ -199,20 +189,19 @@ export default function ProductsList({
                       width={56}
                       height={56}
                       className="h-14 w-14 rounded-lg object-contain"
-                      style={{ background: "var(--blush)" }}
+                      style={{ background: "var(--linen)" }}
                       unoptimized
                     />
                   ) : (
                     <div
                       className="h-14 w-14 rounded-lg"
-                      style={{ background: "var(--blush)" }}
+                      style={{ background: "var(--linen)" }}
                     />
                   )}
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-semibold">{p.name}</p>
-                    <p className="text-sm" style={{ color: "rgba(0,0,0,.68)" }}>
-                      {p.category_name} ·{" "}
-                      <b>{formatMoney(p.discount_price ?? p.price)}</b>
+                    <p className="text-sm" style={{ color: "var(--ink-2)" }}>
+                      {p.category_name}
                     </p>
                     <p className="text-xs font-bold">
                       {p.is_visible ? "Visible" : "Hidden"}

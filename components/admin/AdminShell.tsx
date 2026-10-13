@@ -47,7 +47,7 @@ export default function AdminShell({
     <form action="/api/admin/logout" method="post">
       <button
         className="rounded-md px-3 py-3 text-[15px] font-semibold"
-        style={{ color: "var(--rose)" }}
+        style={{ color: "var(--brick)" }}
         type="submit"
       >
         Log out
@@ -59,7 +59,7 @@ export default function AdminShell({
     <div className="min-h-dvh">
       <header
         className="sticky top-0 z-30 flex items-center justify-between border-b px-4 py-3 md:hidden"
-        style={{ background: "var(--petal)", borderColor: "var(--line)" }}
+        style={{ background: "var(--white)", borderColor: "var(--line)" }}
       >
         <Link href="/admin" className="flex items-center">
           <Image
@@ -94,7 +94,7 @@ export default function AdminShell({
       <div className="flex min-h-dvh max-md:min-h-0">
         <aside
           className="sticky top-0 hidden h-dvh w-60 shrink-0 flex-col border-r p-6 md:flex"
-          style={{ background: "var(--petal)", borderColor: "var(--line)" }}
+          style={{ background: "var(--sand)", borderColor: "var(--line)" }}
         >
           <Link href="/admin" className="mb-8 block">
             <Image
