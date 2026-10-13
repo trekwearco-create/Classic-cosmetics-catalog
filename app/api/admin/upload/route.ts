@@ -5,6 +5,7 @@ import { z } from "zod";
 
 import { log } from "@/lib/log";
 import { limitUpload } from "@/lib/ratelimit";
+import { isSameOriginRequest } from "@/lib/request-security";
 import { isAdmin, supabaseServer } from "@/lib/supabase/server";
 
 const MAX_BYTES = 3 * 1024 * 1024;
@@ -43,12 +44,7 @@ function detectMimeType(buf: Uint8Array): string | null {
 export async function POST(request: Request): Promise<NextResponse> {
   const headerList = await headers();
   const origin = headerList.get("origin");
-  const siteUrl = process.env.SITE_URL;
-  if (
-    !origin ||
-    !siteUrl ||
-    !sameSite(origin, siteUrl)
-  ) {
+  if (!origin || !isSameOriginRequest(headerList)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -173,12 +169,4 @@ export async function POST(request: Request): Promise<NextResponse> {
   ).toString();
 
   return NextResponse.json({ url: publicUrl, path });
-}
-
-function sameSite(origin: string, siteUrl: string): boolean {
-  try {
-    return new URL(origin).host === new URL(siteUrl).host;
-  } catch {
-    return false;
-  }
 }

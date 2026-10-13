@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { turnstileEnabled } from "@/lib/env";
 import { log } from "@/lib/log";
 import { limitLogin } from "@/lib/ratelimit";
+import { isSameOriginRequest } from "@/lib/request-security";
 import { supabaseServer } from "@/lib/supabase/server";
 import { verifyTurnstile } from "@/lib/turnstile";
 
@@ -19,9 +20,8 @@ export async function loginAction(
 ): Promise<LoginState> {
   const headerList = await headers();
   const origin = headerList.get("origin");
-  const siteUrl = process.env.SITE_URL;
-  if (origin && siteUrl && new URL(origin).host !== new URL(siteUrl).host) {
-    return { error: LOGIN_ERROR };
+  if (origin && !isSameOriginRequest(headerList)) {
+    return { error: "This request could not be verified. Refresh and try again." };
   }
 
   const email = String(formData.get("email") ?? "")

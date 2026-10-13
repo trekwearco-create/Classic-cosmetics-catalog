@@ -7,6 +7,7 @@ import { z } from "zod";
 
 import { log } from "@/lib/log";
 import { limitAction } from "@/lib/ratelimit";
+import { isSameOriginRequest } from "@/lib/request-security";
 import { slugify } from "@/lib/slug";
 import { isAdmin, supabaseServer } from "@/lib/supabase/server";
 
@@ -78,11 +79,7 @@ function imageBelongsToPath(image: ImageInput, productId: string): boolean {
 async function sameOriginCheck(): Promise<boolean> {
   const headerList = await headers();
   const origin = headerList.get("origin");
-  const siteUrl = process.env.SITE_URL;
-  if (origin && siteUrl) {
-    return new URL(origin).host === new URL(siteUrl).host;
-  }
-  return true;
+  return !origin || isSameOriginRequest(headerList);
 }
 
 async function imageBelongsToProduct(

@@ -2,13 +2,13 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { log } from "@/lib/log";
+import { isSameOriginRequest } from "@/lib/request-security";
 import { supabaseServer } from "@/lib/supabase/server";
 
 export async function POST(): Promise<void> {
   const headerList = await headers();
   const origin = headerList.get("origin");
-  const siteUrl = process.env.SITE_URL;
-  if (origin && siteUrl && new URL(origin).host !== new URL(siteUrl).host) {
+  if (origin && !isSameOriginRequest(headerList)) {
     redirect("/admin");
   }
   try {

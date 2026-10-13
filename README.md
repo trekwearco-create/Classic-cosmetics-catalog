@@ -25,7 +25,7 @@ replace them with your project settings:
 |---|---|
 | `SUPABASE_URL` | Supabase project URL (no key) |
 | `SUPABASE_ANON_KEY` | Supabase anon key |
-| `SITE_URL` | Public URL, e.g. `https://classic-cosmetics.vercel.app` |
+| `SITE_URL` | Stable production URL, e.g. `https://classic-cosmetics-catalog.vercel.app` (not a deployment-specific preview URL) |
 | `WHATSAPP_NUMBER` | WhatsApp phone number in international digits-only format |
 | `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | **Only** public variable; the Turnstile site key for `/admin/login` |
 | `TURNSTILE_SECRET_KEY` | Turnstile secret key (server only) - used to verify the widget on the server |
@@ -97,7 +97,9 @@ when the database is ready (run `npx tsx scripts/rls-smoke.ts`).
 3. Add the environment variables above in Vercel Settings → Environment
    Variables. Mark `SUPABASE_ANON_KEY`, `TURNSTILE_SECRET_KEY` and
    `UPSTASH_REDIS_REST_TOKEN` as **Secure**.
-4. Deploy; preview and production share the OIDC client with exact callbacks.
+4. Deploy; set `SITE_URL` to the stable production domain (not the generated
+   deployment URL), then redeploy. Set the same URL as the Supabase Auth Site
+   URL and add it to the Auth Redirect URLs.
 
 ## Key rotation & incidents
 

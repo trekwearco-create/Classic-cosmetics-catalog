@@ -7,6 +7,7 @@ import { z } from "zod";
 
 import { log } from "@/lib/log";
 import { limitAction } from "@/lib/ratelimit";
+import { isSameOriginRequest } from "@/lib/request-security";
 import { slugify } from "@/lib/slug";
 import { isAdmin, supabaseServer } from "@/lib/supabase/server";
 
@@ -67,8 +68,7 @@ export async function saveCategoryAction(
   }
   const headerList = await headers();
   const origin = headerList.get("origin");
-  const siteUrl = process.env.SITE_URL;
-  if (origin && siteUrl && new URL(origin).host !== new URL(siteUrl).host) {
+  if (origin && !isSameOriginRequest(headerList)) {
     redirect("/admin/categories");
   }
 
