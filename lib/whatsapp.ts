@@ -21,7 +21,7 @@ export function buildWhatsAppUrl(input: {
     "Assalam o Alaikum, I want to order:",
     `Product: ${input.name}`,
     ...(input.shade ? [`Shade: ${input.shade}`] : []),
-    `Link: ${new URL(input.productPath, env().SITE_URL).toString()}`,
+    new URL(input.productPath, env().SITE_URL).toString(),
   ];
   return `https://wa.me/${raw}?text=${encodeURIComponent(lines.join("\n"))}`;
 }
