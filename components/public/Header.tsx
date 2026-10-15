@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import CartLink from "@/components/public/CartLink";
 
 export default function Header() {
   return (
@@ -34,6 +35,7 @@ export default function Header() {
             Categories
           </Link>
         </nav>
+        <CartLink />
       </div>
     </header>
   );

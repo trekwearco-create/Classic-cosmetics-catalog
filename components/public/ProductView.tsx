@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRef, useState } from "react";
 
+import AddToCartButton from "@/components/public/AddToCartButton";
 import type { ProductDetail } from "@/lib/data";
 
 type ProductShade = ProductDetail["shades"][number];
@@ -271,6 +272,19 @@ export default function ProductView({
           </p>
         ) : null}
 
+        <AddToCartButton
+          product={{ id: product.id, slug: product.slug, name: product.name }}
+          shade={selectedShade
+            ? {
+                id: selectedShade.id,
+                code: selectedShade.code,
+                name: selectedShade.name,
+              }
+            : null}
+          disabled={!product.in_stock || orderDisabled}
+          className="btn-secondary hidden w-full md:inline-flex"
+        />
+
         {orderDisabled ? (
           <button
             className="btn-primary hidden w-full md:inline-flex"
@@ -303,6 +317,18 @@ export default function ProductView({
       ) : null}
 
       <div className="mobile-buy-bar md:hidden">
+        <AddToCartButton
+          product={{ id: product.id, slug: product.slug, name: product.name }}
+          shade={selectedShade
+            ? {
+                id: selectedShade.id,
+                code: selectedShade.code,
+                name: selectedShade.name,
+              }
+            : null}
+          disabled={!product.in_stock || orderDisabled}
+          className="btn-secondary w-full"
+        />
         {orderDisabled ? (
           <button className="btn-primary w-full" type="button" disabled>
             {orderLabel}

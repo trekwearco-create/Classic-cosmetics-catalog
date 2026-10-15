@@ -1,9 +1,10 @@
 # Classic Cosmetics
 
 A small, fast catalog website for a cosmetics shop. Customers browse products,
-search, pick a shade and order with one tap on WhatsApp. There is **no cart,
-no checkout, no payment and no customer accounts**. The owner manages
-categories, products, photos and shades from a private admin panel.
+search, pick a shade, collect items in a persistent cart and send an order
+request on WhatsApp. Checkout collects contact details; there are **no product
+prices, totals, payments or customer accounts**. The owner manages categories,
+products, photos and shades from a private admin panel.
 
 Tech: Next.js (App Router, Turbopack) + TypeScript + Tailwind + Supabase (Auth,
 Storage) + Vercel.
