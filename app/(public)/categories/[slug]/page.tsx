@@ -36,7 +36,7 @@ export default async function CategoryPage({
         <p className="mt-4 text-sm font-semibold" style={{ color: "var(--ink-2)" }}>
           Browse category
         </p>
-        <h1 className="text-3xl md:text-4xl">{category.name}</h1>
+        <h1 className="break-anywhere text-3xl md:text-4xl">{category.name}</h1>
       </div>
       <CategoryChips categories={categories} active={slug} />
       {products.length === 0 ? (

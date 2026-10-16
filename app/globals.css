@@ -48,7 +48,6 @@ body {
   font-size: 16px;
   line-height: 1.6;
   -webkit-text-size-adjust: 100%;
-  overflow-x: hidden;
 }
 
 h1,
@@ -82,9 +81,16 @@ button {
 }
 
 .wrap {
+  width: 100%;
   max-width: 1200px;
   margin: 0 auto;
-  padding: 0 clamp(12px, 4vw, 32px);
+  padding-inline: 16px;
+}
+
+@media (min-width: 768px) {
+  .wrap {
+    padding-inline: 24px;
+  }
 }
 
 @media (max-width: 340px) {
@@ -102,9 +108,15 @@ button {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  overflow-wrap: anywhere;
+}
+
+.break-anywhere {
+  overflow-wrap: anywhere;
 }
 
 .card {
+  box-sizing: border-box;
   background: var(--white);
   border: 1px solid var(--line);
   border-radius: var(--radius-card);
@@ -112,6 +124,7 @@ button {
 
 .field {
   width: 100%;
+  min-width: 0;
   min-height: 48px;
   border: 1px solid rgba(26, 24, 20, 0.35);
   border-radius: var(--radius-field);
@@ -296,6 +309,25 @@ button {
   background: var(--linen);
 }
 
+.cart-item-name {
+  display: -webkit-box;
+  min-width: 0;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.category-page-all-products {
+  display: none;
+}
+
+@media (min-width: 640px) {
+  .category-page-all-products {
+    display: inline-flex;
+  }
+}
+
 .cart-count-badge {
   position: absolute;
   top: -4px;
@@ -320,6 +352,7 @@ button {
   left: 50%;
   display: flex;
   width: min(560px, calc(100vw - 24px));
+  box-sizing: border-box;
   align-items: flex-start;
   gap: 12px;
   padding: 12px;
@@ -347,6 +380,7 @@ button {
 
 .status-dialog {
   width: min(440px, calc(100vw - 24px));
+  box-sizing: border-box;
   max-width: none;
   max-height: calc(100dvh - 32px);
   margin: auto;
@@ -364,6 +398,7 @@ button {
 
 .cart-confirmation-dialog {
   width: min(520px, calc(100vw - 24px));
+  box-sizing: border-box;
   max-width: none;
   max-height: calc(100dvh - 32px);
   margin: auto;

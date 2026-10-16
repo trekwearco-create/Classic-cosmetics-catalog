@@ -29,7 +29,7 @@ export default function CategoryCard({ category }: { category: CategoryRow }) {
           </span>
         )}
       </span>
-      <span className="line-clamp-2 text-sm font-semibold leading-tight">{category.name}</span>
+      <span className="break-anywhere line-clamp-2 text-sm font-semibold leading-tight">{category.name}</span>
     </Link>
   );
 }

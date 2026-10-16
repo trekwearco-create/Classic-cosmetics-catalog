@@ -124,7 +124,7 @@ export default function ProductView({
       </div>
 
       <div className="product-detail-copy">
-        <div>
+        <div className="w-full min-w-0">
           {product.category_slug ? (
             <Link
               className="inline-flex min-h-11 items-center text-sm font-semibold underline underline-offset-4"
@@ -133,7 +133,7 @@ export default function ProductView({
               {product.category_name || "Products"}
             </Link>
           ) : null}
-          <h1 className="mt-2 text-3xl leading-tight md:text-4xl">
+          <h1 className="break-anywhere mt-2 text-3xl leading-tight md:text-4xl">
             {product.name}
           </h1>
           {!product.in_stock ? (

@@ -53,11 +53,11 @@ export default async function HomePage({
 
       <section aria-labelledby="home-products-heading">
         <div className="mb-4 flex items-end justify-between gap-3">
-          <div>
+          <div className="min-w-0">
             <p className="text-sm font-semibold" style={{ color: "var(--ink-2)" }}>
               {q ? "Search results" : selectedCategory?.name ?? "Classic Cosmetics"}
             </p>
-            <h1 id="home-products-heading" className="text-2xl md:text-3xl">
+            <h1 id="home-products-heading" className="break-anywhere text-2xl md:text-3xl">
               {q ? `Products for “${q}”` : selectedCategory ? "Products" : "Our products"}
             </h1>
           </div>

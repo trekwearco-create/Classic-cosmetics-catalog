@@ -24,7 +24,7 @@ export default function Header() {
             style={{ display: "block" }}
           />
         </Link>
-        <nav aria-label="Main navigation" className="col-start-1 row-start-1 flex items-center gap-2 md:gap-6">
+        <nav aria-label="Main navigation" className="col-start-1 row-start-1 flex min-w-0 items-center gap-2 md:gap-6">
           <Link           className="hidden min-h-11 items-center rounded-full px-2 text-sm font-semibold md:inline-flex md:text-base" href="/">
             Home
           </Link>

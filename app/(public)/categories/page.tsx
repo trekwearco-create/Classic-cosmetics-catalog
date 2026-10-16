@@ -15,13 +15,13 @@ export default async function CategoriesPage() {
   return (
     <main className="mt-6 pb-10 md:mt-8">
       <div className="mb-6 flex items-end justify-between gap-4">
-        <div>
+        <div className="min-w-0">
           <p className="text-sm font-semibold" style={{ color: "var(--ink-2)" }}>
             Classic Cosmetics
           </p>
-          <h1 className="text-3xl md:text-4xl">Categories</h1>
+          <h1 className="break-anywhere text-3xl md:text-4xl">Categories</h1>
         </div>
-        <Link className="btn-secondary hidden sm:inline-flex" href="/">
+        <Link className="btn-secondary category-page-all-products" href="/">
           All products
         </Link>
       </div>

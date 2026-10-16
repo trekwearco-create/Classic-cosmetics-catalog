@@ -191,14 +191,14 @@ export default function CartPage({
 
   if (!ready) {
     return (
-      <main className="mx-auto max-w-3xl py-12">
+      <main className="mx-auto w-full max-w-full py-12">
         <p>Loading your cart…</p>
       </main>
     );
   }
 
   return (
-    <main className="mx-auto max-w-4xl py-8 md:py-12">
+    <main className="mx-auto w-full max-w-full py-8 md:py-12">
       <h1 className="text-3xl md:text-4xl">Your Cart</h1>
       {storageError ? (
         <p
@@ -216,12 +216,12 @@ export default function CartPage({
           </Link>
         </div>
       ) : (
-        <div className="mt-6 grid gap-6 md:grid-cols-[minmax(0,1fr)_minmax(280px,0.7fr)]">
-          <section aria-label="Cart items" className="flex flex-col gap-3">
+        <div className="mt-6 grid min-w-0 grid-cols-1 gap-6 md:grid-cols-[minmax(0,1fr)_minmax(280px,0.7fr)]">
+          <section aria-label="Cart items" className="flex min-w-0 flex-col gap-3">
             {items.map((item) => (
               <article
                 key={`${item.id}:${item.shade?.id ?? ""}`}
-                className="card flex gap-4 p-3"
+                className="card box-border grid w-full min-w-0 grid-cols-[88px_minmax(0,1fr)] gap-4 p-3 md:grid-cols-[96px_minmax(0,1fr)]"
               >
                 <Link
                   href={`/product/${encodeURIComponent(item.slug)}`}
@@ -232,15 +232,15 @@ export default function CartPage({
                     photoUrl={item.shade?.imageUrl ?? item.photoUrl}
                   />
                 </Link>
-                <div className="min-w-0 flex-1">
-                  <h2 className="truncate text-base font-bold">{item.name}</h2>
+                <div className="min-w-0">
+                  <h2 className="cart-item-name text-base font-bold">{item.name}</h2>
                   {item.shade ? (
-                    <p className="text-sm" style={{ color: "var(--ink-2)" }}>
+                    <p className="min-w-0 break-words text-sm" style={{ color: "var(--ink-2)" }}>
                       Shade: {item.shade.code ? `${item.shade.code} ` : ""}
                       {item.shade.name}
                     </p>
                   ) : null}
-                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                  <div className="mt-2 flex min-w-0 flex-wrap items-center gap-2">
                     <button
                       type="button"
                       className="btn-secondary min-h-10 px-3"
@@ -279,7 +279,7 @@ export default function CartPage({
                     </button>
                     <button
                       type="button"
-                      className="btn-danger ml-auto"
+                      className="btn-danger ml-auto min-w-0"
                       onClick={() =>
                         removeItem(item.id, item.shade?.id ?? null)
                       }
@@ -295,12 +295,12 @@ export default function CartPage({
           </section>
 
           <form
-            className="card flex h-fit flex-col gap-4 p-4 md:p-5"
+            className="card box-border flex h-fit w-full min-w-0 flex-col gap-4 p-4 md:p-5"
             onSubmit={confirmOrder}
           >
             <h2 className="text-xl">Checkout</h2>
             <label
-              className="flex flex-col gap-1 text-sm font-semibold"
+              className="flex min-w-0 flex-col gap-1 text-sm font-semibold"
               htmlFor="customer-name"
             >
               Name
@@ -316,7 +316,7 @@ export default function CartPage({
               />
             </label>
             <label
-              className="flex flex-col gap-1 text-sm font-semibold"
+              className="flex min-w-0 flex-col gap-1 text-sm font-semibold"
               htmlFor="customer-phone"
             >
               Phone
@@ -333,7 +333,7 @@ export default function CartPage({
               />
             </label>
             <label
-              className="flex flex-col gap-1 text-sm font-semibold"
+              className="flex min-w-0 flex-col gap-1 text-sm font-semibold"
               htmlFor="customer-address"
             >
               Address <span className="font-normal">(optional)</span>
