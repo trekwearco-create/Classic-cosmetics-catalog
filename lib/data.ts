@@ -258,9 +258,10 @@ async function loadProductBySlug(
       category_slug: product.categories?.slug ?? "",
       images: (imagesRes.data ?? [])
         .filter((image) => image.is_cover || !shadeImageIds.has(image.id))
+        .sort((a, b) => Number(b.is_cover) - Number(a.is_cover))
         .map((img) => ({
-        id: img.id,
-        url: img.image_url,
+          id: img.id,
+          url: img.image_url,
         })),
       shades: (shadesRes.data ?? []).map((s) => ({
         id: s.id,

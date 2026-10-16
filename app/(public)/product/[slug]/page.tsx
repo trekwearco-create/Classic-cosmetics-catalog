@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import ProductView from "@/components/public/ProductView";
 import { getProductBySlug } from "@/lib/data";
 import { env } from "@/lib/env";
-import { buildWhatsAppUrl, productLinkPath } from "@/lib/whatsapp";
+import { productLinkPath } from "@/lib/whatsapp";
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -57,27 +57,5 @@ export default async function ProductPage({ params }: Props) {
   const product = await getProductBySlug(slug);
   if (!product) notFound();
 
-  const productPath = productLinkPath(product.slug);
-  const orderUrl = buildWhatsAppUrl({
-    name: product.name,
-    productPath,
-  });
-  const shadeOrderUrls = Object.fromEntries(
-    product.shades.map((shade) => [
-      shade.id,
-      buildWhatsAppUrl({
-        name: product.name,
-        shade: `${shade.code ? `${shade.code} ` : ""}${shade.name}`,
-        productPath,
-      }),
-    ]),
-  );
-
-  return (
-    <ProductView
-      product={product}
-      orderUrl={orderUrl}
-      shadeOrderUrls={shadeOrderUrls}
-    />
-  );
+  return <ProductView product={product} />;
 }

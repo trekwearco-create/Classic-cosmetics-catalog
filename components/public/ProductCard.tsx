@@ -52,8 +52,13 @@ export default function ProductCard({ product }: { product: ProductCardRow }) {
       </Link>
       <div className="p-2.5 pt-2 md:p-3">
         <AddToCartButton
-          product={{ id: product.id, slug: product.slug, name: product.name }}
-          disabled={!product.in_stock}
+          product={{
+            id: product.id,
+            slug: product.slug,
+            name: product.name,
+            photoUrl: product.cover_url,
+          }}
+          inStock={product.in_stock}
         />
       </div>
     </article>

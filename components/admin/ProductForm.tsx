@@ -220,7 +220,7 @@ export default function ProductForm({
               ))}
             </select>
           </label>
-          <div className="flex gap-6">
+          <div className="flex flex-wrap items-start gap-6">
             <label className="flex items-center gap-2 text-sm font-semibold">
               <input
                 type="checkbox"
@@ -231,16 +231,21 @@ export default function ProductForm({
               />
               Visible on website
             </label>
-            <label className="flex items-center gap-2 text-sm font-semibold">
-              <input
-                type="checkbox"
-                checked={inStock}
-                onChange={(e) => setInStock(e.target.checked)}
-                className="h-5 w-5"
-                style={{ accentColor: "var(--ink)" }}
-              />
-              In stock
-            </label>
+            <div className="flex flex-col gap-1">
+              <label className="flex items-center gap-2 text-sm font-semibold">
+                <input
+                  type="checkbox"
+                  checked={inStock}
+                  onChange={(e) => setInStock(e.target.checked)}
+                  className="h-5 w-5"
+                  style={{ accentColor: "var(--ink)" }}
+                />
+                In stock
+              </label>
+              <p className="text-xs" style={{ color: "var(--ink-2)" }}>
+                When off, customers see &apos;This product is out of stock&apos; and cannot order it.
+              </p>
+            </div>
           </div>
         </div>
         <label className="mt-4 flex flex-col gap-1 text-sm font-semibold">

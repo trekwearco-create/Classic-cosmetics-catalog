@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRef, useState } from "react";
 
 import AddToCartButton from "@/components/public/AddToCartButton";
+import MessageDialog from "@/components/public/MessageDialog";
 import type { ProductDetail } from "@/lib/data";
 
 type ProductShade = ProductDetail["shades"][number];
@@ -12,19 +13,17 @@ type ImageViewer = typeof import("./ProductImageViewer").default;
 
 export default function ProductView({
   product,
-  orderUrl,
-  shadeOrderUrls,
 }: {
   product: ProductDetail;
-  orderUrl: string;
-  shadeOrderUrls: Record<string, string>;
 }) {
   const [selectedShade, setSelectedShade] = useState<ProductShade | null>(null);
   const [shadeMenuOpen, setShadeMenuOpen] = useState(false);
+  const [dialogMessage, setDialogMessage] = useState("");
   const [ImageViewerComponent, setImageViewerComponent] =
     useState<ImageViewer | null>(null);
   const [viewerIndex, setViewerIndex] = useState<number | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const shadeSelectorRef = useRef<HTMLElement | null>(null);
   const pointerStartRef = useRef<{ x: number; y: number } | null>(null);
   const pointerMovedRef = useRef(false);
   const baseImage = product.images[0]?.url ?? null;
@@ -35,17 +34,15 @@ export default function ProductView({
       ...product.images.map((image) => image.url),
     ]),
   ];
-  const currentOrderUrl = selectedShade
-    ? shadeOrderUrls[selectedShade.id] ?? orderUrl
-    : orderUrl;
   const needsShade = product.shades.length > 0;
-  const orderDisabled = needsShade && selectedShade === null;
-  const orderLabel = orderDisabled
-    ? "Select a shade first"
-    : "Order on WhatsApp";
 
   function chooseShade(shade: ProductShade) {
-    if (!shade.is_available) return;
+    if (!shade.is_available) {
+      setDialogMessage(
+        "Sorry, this shade is currently out of stock. Please choose another shade.",
+      );
+      return;
+    }
     setSelectedShade(shade);
     setShadeMenuOpen(false);
   }
@@ -66,7 +63,7 @@ export default function ProductView({
   }
 
   return (
-    <main className="product-detail-layout mt-4 pb-28 md:mt-8 md:pb-10">
+    <main className="product-detail-layout mt-4 pb-36 md:mt-8 md:pb-10">
       <div className="product-gallery" aria-label={`Images of ${product.name}`}>
         {galleryImages.length > 0 ? (
           <div className="product-gallery-track" key={mainImage ?? "empty"}>
@@ -139,10 +136,20 @@ export default function ProductView({
           <h1 className="mt-2 text-3xl leading-tight md:text-4xl">
             {product.name}
           </h1>
+          {!product.in_stock ? (
+            <p className="mt-2 text-sm font-semibold text-brick">
+              This product is out of stock.
+            </p>
+          ) : null}
         </div>
 
         {needsShade ? (
-          <section className="card w-full p-4" aria-labelledby="shade-heading">
+          <section
+            ref={shadeSelectorRef}
+            className="card w-full p-4"
+            aria-labelledby="shade-heading"
+            tabIndex={-1}
+          >
             <h2 id="shade-heading" className="text-sm font-semibold">
               Choose a shade
             </h2>
@@ -159,9 +166,9 @@ export default function ProductView({
                     key={shade.id}
                     type="button"
                     aria-pressed={selectedShade?.id === shade.id}
-                    disabled={!shade.is_available}
+                    aria-disabled={!shade.is_available}
                     onClick={() => chooseShade(shade)}
-                    className="inline-flex min-h-11 items-center gap-2 rounded-full border px-3 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50"
+                    className={`inline-flex min-h-11 items-center gap-2 rounded-full border px-3 text-sm font-semibold${shade.is_available ? "" : " cursor-not-allowed opacity-50"}`}
                     style={{
                       borderColor:
                         selectedShade?.id === shade.id
@@ -193,7 +200,7 @@ export default function ProductView({
                     ) : null}
                     {shade.code ? `${shade.code} ` : ""}
                     {shade.name}
-                    {!shade.is_available ? " · Unavailable" : ""}
+                    {!shade.is_available ? " · Out of stock" : ""}
                   </button>
                 ))}
               </div>
@@ -235,9 +242,9 @@ export default function ProductView({
                         type="button"
                         role="option"
                         aria-selected={selectedShade?.id === shade.id}
-                        disabled={!shade.is_available}
+                        aria-disabled={!shade.is_available}
                         onClick={() => chooseShade(shade)}
-                        className="flex min-h-11 w-full items-center gap-2 rounded-lg px-3 text-left text-sm font-semibold hover:bg-linen disabled:cursor-not-allowed disabled:opacity-50"
+                        className={`flex min-h-11 w-full items-center gap-2 rounded-lg px-3 text-left text-sm font-semibold hover:bg-linen${shade.is_available ? "" : " cursor-not-allowed opacity-50"}`}
                       >
                         {shade.color_hex ? (
                           <span
@@ -252,7 +259,7 @@ export default function ProductView({
                         <span>
                           {shade.code ? `${shade.code} ` : ""}
                           {shade.name}
-                          {!shade.is_available ? " · Unavailable" : ""}
+                          {!shade.is_available ? " · Out of stock" : ""}
                         </span>
                       </button>
                     ))}
@@ -263,47 +270,41 @@ export default function ProductView({
           </section>
         ) : null}
 
-        {!product.in_stock ? (
-          <p className="badge-out w-fit">Out of stock</p>
-        ) : null}
         {product.description ? (
           <p className="leading-relaxed" style={{ color: "var(--ink-2)" }}>
             {product.description}
           </p>
         ) : null}
 
-        <AddToCartButton
-          product={{ id: product.id, slug: product.slug, name: product.name }}
-          shade={selectedShade
-            ? {
-                id: selectedShade.id,
-                code: selectedShade.code,
-                name: selectedShade.name,
-              }
-            : null}
-          disabled={!product.in_stock || orderDisabled}
-          className="btn-secondary hidden w-full md:inline-flex"
-        />
-
-        {orderDisabled ? (
-          <button
-            className="btn-primary hidden w-full md:inline-flex"
-            type="button"
-            disabled
-          >
-            {orderLabel}
-          </button>
-        ) : (
-          <a
-            href={currentOrderUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="btn-primary hidden w-full md:inline-flex"
-            aria-label={`Order ${product.name}${selectedShade ? ` in ${selectedShade.name}` : ""} on WhatsApp`}
-          >
-            {orderLabel}
-          </a>
-        )}
+        <div className="product-buy-bar">
+          <AddToCartButton
+            product={{
+              id: product.id,
+              slug: product.slug,
+              name: product.name,
+              photoUrl: baseImage,
+            }}
+            shade={selectedShade
+              ? {
+                  id: selectedShade.id,
+                  code: selectedShade.code,
+                  name: selectedShade.name,
+                  imageUrl: selectedShade.image_url,
+                }
+              : null}
+            inStock={product.in_stock}
+              available={selectedShade?.is_available ?? true}
+              requiresShade={needsShade}
+            onMissingShade={() => {
+              shadeSelectorRef.current?.scrollIntoView({
+                behavior: "smooth",
+                block: "center",
+              });
+              shadeSelectorRef.current?.focus({ preventScroll: true });
+            }}
+            className="btn-secondary w-full"
+          />
+        </div>
       </div>
       {viewerIndex !== null && ImageViewerComponent ? (
         <ImageViewerComponent
@@ -316,35 +317,12 @@ export default function ProductView({
         />
       ) : null}
 
-      <div className="mobile-buy-bar md:hidden">
-        <AddToCartButton
-          product={{ id: product.id, slug: product.slug, name: product.name }}
-          shade={selectedShade
-            ? {
-                id: selectedShade.id,
-                code: selectedShade.code,
-                name: selectedShade.name,
-              }
-            : null}
-          disabled={!product.in_stock || orderDisabled}
-          className="btn-secondary w-full"
-        />
-        {orderDisabled ? (
-          <button className="btn-primary w-full" type="button" disabled>
-            {orderLabel}
-          </button>
-        ) : (
-          <a
-            href={currentOrderUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="btn-primary w-full"
-            aria-label={`Order ${product.name}${selectedShade ? ` in ${selectedShade.name}` : ""} on WhatsApp`}
-          >
-            {orderLabel}
-          </a>
-        )}
-      </div>
+      <MessageDialog
+        open={dialogMessage !== ""}
+        title="Out of stock"
+        message={dialogMessage}
+        onDismiss={() => setDialogMessage("")}
+      />
     </main>
   );
 }

@@ -116,16 +116,21 @@ export default function ShadeEditor({
               aria-label="Shade name"
               required
             />
-            <label className="flex flex-none items-center gap-2 text-sm font-semibold">
-              <input
-                type="checkbox"
-                checked={shade.is_available}
-                onChange={(e) => update(i, { is_available: e.target.checked })}
-                className="h-5 w-5"
-                style={{ accentColor: "var(--ink)" }}
-              />
-              {shade.is_available ? "Available" : "Unavailable"}
-            </label>
+            <div className="flex flex-none flex-col gap-1">
+              <label className="flex items-center gap-2 text-sm font-semibold">
+                <input
+                  type="checkbox"
+                  checked={shade.is_available}
+                  onChange={(e) => update(i, { is_available: e.target.checked })}
+                  className="h-5 w-5"
+                  style={{ accentColor: "var(--ink)" }}
+                />
+                {shade.is_available ? "In stock" : "Out of stock"}
+              </label>
+              <p className="text-xs" style={{ color: "var(--ink-2)" }}>
+                Out of stock shades cannot be selected by customers.
+              </p>
+            </div>
             <div className="w-full">
               <ImageUploader
                 items={shade.image ? [shade.image] : []}
