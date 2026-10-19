@@ -123,12 +123,18 @@ Sand and linen neutrals with white surfaces, charcoal text and small bronze
 accents. Body font Figtree, headings Bodoni Moda. Logo and favicon use assets
 from `public/`.
 
+## Overlays
+
+Modals, sheets, and pop-ups use the native dialog top layer; never use z-index to
+stack above the sticky bar or header.
+
 ## Shade selector regression check
 
 Open a visible product with shades at desktop and mobile widths. Confirm up to
-eight shades appear as selectable pills and larger shade lists as a dropdown;
-unavailable shades are visible but disabled. Confirm ordering is disabled until
-an available shade is selected, a linked shade photo becomes the first gallery
+eight shades appear as selectable pills on desktop, larger lists as a dropdown
+on desktop, and lists of any size as a bottom sheet on mobile; unavailable
+shades are visible but disabled. Confirm ordering is disabled until an
+available shade is selected, a linked shade photo becomes the first gallery
 image, and the WhatsApp message includes the selected shade. Open a product
 with no shades and confirm the selector is absent and ordering works directly.
 In the admin form, type into the bulk shade box and attempt to save without

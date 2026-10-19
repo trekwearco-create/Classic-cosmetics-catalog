@@ -292,6 +292,101 @@ button {
   background: var(--white);
 }
 
+.shade-mobile-trigger {
+  display: none;
+}
+
+.shade-option {
+  min-height: 48px;
+}
+
+.shade-option-label {
+  min-width: 0;
+  flex: 1;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.shade-option-check {
+  flex: 0 0 auto;
+  color: var(--bronze);
+}
+
+.shade-selector-label {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.shade-sheet-dialog {
+  position: fixed;
+  inset: auto 0 0;
+  width: 100%;
+  max-width: none;
+  max-height: 70dvh;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: 16px 16px 0 0;
+  background: var(--white);
+  color: var(--ink);
+  animation: shade-sheet-enter 250ms ease-out both;
+}
+
+.shade-sheet-dialog::backdrop {
+  background: rgb(0 0 0 / 45%);
+}
+
+.shade-sheet-content {
+  display: flex;
+  max-height: 70dvh;
+  flex-direction: column;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.shade-sheet-header {
+  display: flex;
+  min-height: 64px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 8px 16px 8px 20px;
+  border-bottom: 1px solid var(--line);
+}
+
+.shade-sheet-close {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: inherit;
+  font-size: 28px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.shade-sheet-list {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 8px 12px;
+}
+
+@keyframes shade-sheet-enter {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
 .purchase-button[aria-disabled="true"] {
   cursor: not-allowed;
   opacity: 0.62;
@@ -498,12 +593,47 @@ button {
     border: 0;
     background: transparent;
   }
+
+    .shade-sheet-dialog {
+      display: none;
+    }
   }
 
-@media (prefers-reduced-motion: reduce) {
-  .cart-toast {
-    transition: none;
+  @media (max-width: 767px) {
+    .shade-mobile-trigger {
+      display: flex;
+    }
+
+    .shade-desktop-options,
+    .shade-desktop-selector {
+      display: none;
+    }
+
+    .shade-pill {
+      max-width: 100%;
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
   }
+
+  @media (max-width: 767px) and (orientation: landscape) {
+    .shade-sheet-dialog {
+      max-height: 85dvh;
+    }
+
+    .shade-sheet-content {
+      max-height: 85dvh;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .cart-toast {
+      transition: none;
+    }
+
+    .shade-sheet-dialog {
+      animation: none;
+    }
 
   .cart-icon-bump {
     animation: none;

@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import AddToCartButton from "@/components/public/AddToCartButton";
 import MessageDialog from "@/components/public/MessageDialog";
@@ -10,6 +10,29 @@ import type { ProductDetail } from "@/lib/data";
 
 type ProductShade = ProductDetail["shades"][number];
 type ImageViewer = typeof import("./ProductImageViewer").default;
+type ShadeMenuPosition = {
+  left: number;
+  width: number;
+  maxHeight: number;
+  top?: number;
+  bottom?: number;
+};
+
+function lockPageScroll() {
+  const root = document.documentElement;
+  const previousOverflow = root.style.overflow;
+  const previousPaddingRight = document.body.style.paddingRight;
+  const scrollbarWidth = window.innerWidth - root.clientWidth;
+  root.style.overflow = "hidden";
+  if (scrollbarWidth > 0) {
+    document.body.style.paddingRight = `${scrollbarWidth}px`;
+  }
+
+  return () => {
+    root.style.overflow = previousOverflow;
+    document.body.style.paddingRight = previousPaddingRight;
+  };
+}
 
 export default function ProductView({
   product,
@@ -18,12 +41,20 @@ export default function ProductView({
 }) {
   const [selectedShade, setSelectedShade] = useState<ProductShade | null>(null);
   const [shadeMenuOpen, setShadeMenuOpen] = useState(false);
+  const [shadeSheetOpen, setShadeSheetOpen] = useState(false);
+  const [shadeMenuPosition, setShadeMenuPosition] =
+    useState<ShadeMenuPosition | null>(null);
   const [dialogMessage, setDialogMessage] = useState("");
   const [ImageViewerComponent, setImageViewerComponent] =
     useState<ImageViewer | null>(null);
   const [viewerIndex, setViewerIndex] = useState<number | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const shadeSelectorRef = useRef<HTMLElement | null>(null);
+  const shadeTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const shadeReturnFocusRef = useRef<HTMLButtonElement | null>(null);
+  const shadeSheetRef = useRef<HTMLDialogElement | null>(null);
+  const shadeSheetCloseRef = useRef<HTMLButtonElement | null>(null);
+  const selectedShadeOptionRef = useRef<HTMLButtonElement | null>(null);
   const pointerStartRef = useRef<{ x: number; y: number } | null>(null);
   const pointerMovedRef = useRef(false);
   const baseImage = product.images[0]?.url ?? null;
@@ -44,8 +75,121 @@ export default function ProductView({
       return;
     }
     setSelectedShade(shade);
-    setShadeMenuOpen(false);
+    if (shadeSheetRef.current?.open) dismissShadeSheet();
+    else closeShadeMenu();
   }
+
+  function openShadeMenu(button: HTMLButtonElement) {
+    shadeReturnFocusRef.current = button;
+    setShadeSheetOpen(window.matchMedia("(max-width: 767px)").matches);
+    setShadeMenuOpen(true);
+  }
+
+  function closeShadeMenu() {
+    setShadeMenuOpen(false);
+    setShadeSheetOpen(false);
+    shadeReturnFocusRef.current?.focus({ preventScroll: true });
+  }
+
+  function dismissShadeSheet() {
+    shadeSheetRef.current?.close();
+    closeShadeMenu();
+  }
+
+  useEffect(() => {
+    const dialog = shadeSheetRef.current;
+    if (!dialog) return;
+
+    const mobile = window.matchMedia("(max-width: 767px)");
+    if (!shadeMenuOpen) {
+      if (dialog.open) dialog.close();
+      return;
+    }
+
+    function handleBreakpointChange() {
+      closeShadeMenu();
+    }
+
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        shadeSheetRef.current?.close();
+        setShadeMenuOpen(false);
+        setShadeSheetOpen(false);
+        shadeReturnFocusRef.current?.focus({ preventScroll: true });
+      }
+    }
+
+    mobile.addEventListener("change", handleBreakpointChange);
+    if (shadeSheetOpen) {
+      window.addEventListener("keydown", handleEscape, true);
+    }
+    if (!shadeSheetOpen) {
+      return () => {
+        mobile.removeEventListener("change", handleBreakpointChange);
+      };
+    }
+
+    const unlockPageScroll = lockPageScroll();
+
+    if (!dialog.open) dialog.showModal();
+    requestAnimationFrame(() => {
+      shadeSheetCloseRef.current?.focus();
+      selectedShadeOptionRef.current?.scrollIntoView({ block: "nearest" });
+    });
+
+    return () => {
+      mobile.removeEventListener("change", handleBreakpointChange);
+      window.removeEventListener("keydown", handleEscape, true);
+      if (dialog.open) dialog.close();
+      unlockPageScroll();
+    };
+  }, [shadeMenuOpen, shadeSheetOpen, selectedShade?.id]);
+
+  useLayoutEffect(() => {
+    if (!shadeMenuOpen || window.matchMedia("(max-width: 767px)").matches) {
+      return;
+    }
+
+    function updatePosition() {
+      const dropdownTrigger = shadeTriggerRef.current;
+      if (!dropdownTrigger) return;
+      const rect = dropdownTrigger.getBoundingClientRect();
+      const viewport = window.visualViewport;
+      const viewportWidth = viewport?.width ?? window.innerWidth;
+      const viewportHeight = viewport?.height ?? window.innerHeight;
+      const left = Math.max(8, Math.min(rect.left, viewportWidth - rect.width - 8));
+      const headerBottom =
+        document.querySelector("header")?.getBoundingClientRect().bottom ?? 0;
+      const topLimit = Math.max(8, headerBottom + 8);
+      const above = Math.max(0, rect.top - topLimit);
+      const below = viewportHeight - rect.bottom - 8;
+      const opensAbove = above > below;
+      const maxHeight = Math.max(0, Math.max(above, below) - 4);
+
+      setShadeMenuPosition({
+        left,
+        width: Math.min(rect.width, viewportWidth - 16),
+        maxHeight,
+        ...(opensAbove
+          ? { bottom: viewportHeight - rect.top + 4 }
+          : { top: Math.max(topLimit, rect.bottom + 4) }),
+      });
+    }
+
+    updatePosition();
+    window.addEventListener("resize", updatePosition);
+    window.addEventListener("scroll", updatePosition, true);
+    window.visualViewport?.addEventListener("resize", updatePosition);
+    window.visualViewport?.addEventListener("scroll", updatePosition);
+
+    return () => {
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition, true);
+      window.visualViewport?.removeEventListener("resize", updatePosition);
+      window.visualViewport?.removeEventListener("scroll", updatePosition);
+    };
+  }, [shadeMenuOpen]);
 
   async function openViewer(
     index: number,
@@ -159,8 +303,39 @@ export default function ProductView({
                 {selectedShade.name}
               </p>
             ) : null}
+            <button
+              ref={shadeTriggerRef}
+              type="button"
+              className="shade-mobile-trigger field mt-3 flex items-center justify-between text-left"
+              aria-haspopup="listbox"
+              aria-expanded={shadeMenuOpen}
+              onClick={(event) => {
+                if (shadeMenuOpen) closeShadeMenu();
+                else openShadeMenu(event.currentTarget);
+              }}
+            >
+              <span className="flex min-w-0 items-center gap-2">
+                {selectedShade?.color_hex ? (
+                  <span
+                    className="h-5 w-5 shrink-0 rounded-full border"
+                    style={{
+                      background: selectedShade.color_hex,
+                      borderColor: "var(--line)",
+                    }}
+                    aria-hidden="true"
+                  />
+                ) : null}
+                <span className="shade-selector-label">
+                  {selectedShade
+                    ? `${selectedShade.code ? `${selectedShade.code} ` : ""}${selectedShade.name}`
+                    : "Select a shade"}
+                </span>
+              </span>
+              <span aria-hidden="true">{shadeMenuOpen ? "−" : "+"}</span>
+            </button>
+
             {product.shades.length <= 8 ? (
-              <div className="mt-3 flex flex-wrap gap-2">
+              <div className="shade-desktop-options mt-3 flex flex-wrap gap-2">
                 {product.shades.map((shade) => (
                   <button
                     key={shade.id}
@@ -168,7 +343,7 @@ export default function ProductView({
                     aria-pressed={selectedShade?.id === shade.id}
                     aria-disabled={!shade.is_available}
                     onClick={() => chooseShade(shade)}
-                    className={`inline-flex min-h-11 items-center gap-2 rounded-full border px-3 text-sm font-semibold${shade.is_available ? "" : " cursor-not-allowed opacity-50"}`}
+                    className={`shade-pill inline-flex min-h-11 items-center gap-2 rounded-full border px-3 text-left text-sm font-semibold${shade.is_available ? "" : " cursor-not-allowed opacity-50"}`}
                     style={{
                       borderColor:
                         selectedShade?.id === shade.id
@@ -205,13 +380,23 @@ export default function ProductView({
                 ))}
               </div>
             ) : (
-              <div className="relative mt-3">
+              <div className="shade-desktop-selector relative mt-3">
                 <button
+                  ref={shadeTriggerRef}
                   type="button"
                   className="field flex items-center justify-between text-left"
                   aria-haspopup="listbox"
                   aria-expanded={shadeMenuOpen}
-                  onClick={() => setShadeMenuOpen((open) => !open)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Escape" && shadeMenuOpen) {
+                      event.preventDefault();
+                      closeShadeMenu();
+                    }
+                  }}
+                  onClick={(event) => {
+                    if (shadeMenuOpen) closeShadeMenu();
+                    else openShadeMenu(event.currentTarget);
+                  }}
                 >
                   <span className="flex min-w-0 items-center gap-2 truncate">
                     {selectedShade?.color_hex ? (
@@ -224,17 +409,26 @@ export default function ProductView({
                         aria-hidden="true"
                       />
                     ) : null}
-                    {selectedShade
-                      ? `${selectedShade.code ? `${selectedShade.code} ` : ""}${selectedShade.name}`
-                      : "Select a shade"}
+                    <span className="shade-selector-label">
+                      {selectedShade
+                        ? `${selectedShade.code ? `${selectedShade.code} ` : ""}${selectedShade.name}`
+                        : "Select a shade"}
+                    </span>
                   </span>
                   <span aria-hidden="true">{shadeMenuOpen ? "−" : "+"}</span>
                 </button>
                 {shadeMenuOpen ? (
                   <div
-                    className="card absolute inset-x-0 top-full z-20 mt-1 max-h-64 overflow-y-auto p-1"
+                    className="shade-desktop-dropdown card fixed z-[1000] overflow-y-auto p-1"
                     role="listbox"
                     aria-label="Product shades"
+                    onKeyDown={(event) => {
+                      if (event.key === "Escape") {
+                        event.preventDefault();
+                        closeShadeMenu();
+                      }
+                    }}
+                    style={shadeMenuPosition ?? { visibility: "hidden" }}
                   >
                     {product.shades.map((shade) => (
                       <button
@@ -244,7 +438,7 @@ export default function ProductView({
                         aria-selected={selectedShade?.id === shade.id}
                         aria-disabled={!shade.is_available}
                         onClick={() => chooseShade(shade)}
-                        className={`flex min-h-11 w-full items-center gap-2 rounded-lg px-3 text-left text-sm font-semibold hover:bg-linen${shade.is_available ? "" : " cursor-not-allowed opacity-50"}`}
+                        className={`shade-option flex min-h-12 w-full items-center gap-2 rounded-lg px-3 text-left text-sm font-semibold hover:bg-linen${shade.is_available ? "" : " cursor-not-allowed opacity-50"}`}
                       >
                         {shade.color_hex ? (
                           <span
@@ -256,17 +450,106 @@ export default function ProductView({
                             aria-hidden="true"
                           />
                         ) : null}
-                        <span>
+                        <span className="shade-option-label">
                           {shade.code ? `${shade.code} ` : ""}
                           {shade.name}
                           {!shade.is_available ? " · Out of stock" : ""}
                         </span>
+                        {selectedShade?.id === shade.id ? (
+                          <span className="shade-option-check" aria-hidden="true">
+                            ✓
+                          </span>
+                        ) : null}
                       </button>
                     ))}
                   </div>
                 ) : null}
               </div>
             )}
+
+            <dialog
+              ref={shadeSheetRef}
+              className="shade-sheet-dialog"
+              aria-labelledby="shade-sheet-heading"
+              onClose={() => {
+                closeShadeMenu();
+              }}
+              onCancel={(event) => {
+                event.preventDefault();
+                dismissShadeSheet();
+              }}
+              onKeyDown={(event) => {
+                if (event.key === "Escape") {
+                  event.preventDefault();
+                  dismissShadeSheet();
+                }
+              }}
+              onClick={(event) => {
+                if (event.target === event.currentTarget) {
+                  dismissShadeSheet();
+                }
+              }}
+            >
+              <div className="shade-sheet-content">
+                <div className="shade-sheet-header">
+                  <h2 id="shade-sheet-heading" className="text-lg font-semibold">
+                    Choose a shade
+                  </h2>
+                  <button
+                    ref={shadeSheetCloseRef}
+                    type="button"
+                    className="shade-sheet-close"
+                    aria-label="Close shade list"
+                    onClick={dismissShadeSheet}
+                  >
+                    ×
+                  </button>
+                </div>
+                <div
+                  className="shade-sheet-list"
+                  role="listbox"
+                  aria-label="Product shades"
+                >
+                  {product.shades.map((shade) => (
+                    <button
+                      key={shade.id}
+                      ref={
+                        shadeMenuOpen && selectedShade?.id === shade.id
+                          ? selectedShadeOptionRef
+                          : null
+                      }
+                      type="button"
+                      role="option"
+                      aria-selected={selectedShade?.id === shade.id}
+                      aria-disabled={!shade.is_available}
+                      onClick={() => chooseShade(shade)}
+                      className={`shade-option flex min-h-12 w-full items-center gap-2 rounded-lg px-3 text-left text-sm font-semibold hover:bg-linen${shade.is_available ? "" : " cursor-not-allowed opacity-50"}`}
+                    >
+                      {shade.color_hex ? (
+                        <span
+                          className="h-5 w-5 shrink-0 rounded-full border"
+                          style={{
+                            background: shade.color_hex,
+                            borderColor: "var(--line)",
+                          }}
+                          aria-hidden="true"
+                        />
+                      ) : null}
+                      <span className="shade-option-label">
+                        {shade.code ? `${shade.code} ` : ""}
+                        {shade.name}
+                        {!shade.is_available ? " · Out of stock" : ""}
+                      </span>
+                      {selectedShade?.id === shade.id ? (
+                        <span className="shade-option-check" aria-hidden="true">
+                          ✓
+                        </span>
+                      ) : null}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </dialog>
           </section>
         ) : null}
 
