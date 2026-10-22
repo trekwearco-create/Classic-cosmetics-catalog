@@ -14,9 +14,13 @@ import { isAdmin, supabaseServer } from "@/lib/supabase/server";
 const categorySchema = z.object({
   id: z.string().uuid().optional(),
   name: z.string().trim().min(1).max(60),
+  slug: z.string().trim().max(120).optional(),
   sort_order: z.coerce.number().int().min(0).max(9999),
   image_url: z.string().url().max(500).refine(isPublicImageUrl).nullish(),
   parent_id: z.string().uuid().nullish(),
+  show_in_menu: z.coerce.boolean().optional(),
+  is_active: z.coerce.boolean().optional(),
+  description: z.string().trim().max(1000).nullish(),
 });
 
 export type CategoryFormState = {
@@ -30,8 +34,8 @@ async function requireAdmin(): Promise<boolean> {
   return isAdmin();
 }
 
-function safeSlug(name: string): string {
-  return slugify(name);
+function safeSlug(raw: string): string {
+  return slugify(raw);
 }
 
 function isPublicImageUrl(value: string): boolean {
@@ -78,19 +82,47 @@ export async function saveCategoryAction(
     return { error: "Too many requests. Try again in a minute." };
   }
 
+  const parentIdRaw = formData.get("parent_id");
+  const parentId = parentIdRaw && parentIdRaw !== "" ? String(parentIdRaw) : null;
+
   const parsed = categorySchema.safeParse({
     id: formData.get("id") || undefined,
     name: formData.get("name"),
+    slug: formData.get("slug") || undefined,
     sort_order: formData.get("sort_order"),
     image_url: formData.get("image_url") || undefined,
-    parent_id: formData.get("parent_id") || undefined,
+    parent_id: parentId,
+    show_in_menu: formData.get("show_in_menu") === "on" || formData.get("show_in_menu") === "true",
+    is_active: formData.get("is_active") === null ? true : formData.get("is_active") === "on" || formData.get("is_active") === "true",
+    description: formData.get("description") || undefined,
   });
   if (!parsed.success) {
-    return { error: "Enter a category name of up to 60 characters." };
+    return { error: "Enter a valid category name of up to 60 characters." };
   }
 
   const supabase = await supabaseServer();
-  const slug = safeSlug(parsed.data.name);
+
+  // Prevent setting self as parent
+  if (parsed.data.id && parsed.data.parent_id && parsed.data.id === parsed.data.parent_id) {
+    return { error: "A category cannot be its own parent." };
+  }
+
+  // Derive slug
+  let slug = parsed.data.slug?.trim() ? safeSlug(parsed.data.slug) : "";
+  if (!slug) {
+    const selfSlug = safeSlug(parsed.data.name);
+    if (parsed.data.parent_id) {
+      const { data: parent } = await supabase
+        .from("categories")
+        .select("slug")
+        .eq("id", parsed.data.parent_id)
+        .maybeSingle();
+      slug = parent?.slug ? `${parent.slug}-${selfSlug}` : selfSlug;
+    } else {
+      slug = selfSlug;
+    }
+  }
+
   const previous = parsed.data.id
     ? await supabase
         .from("categories")
@@ -109,16 +141,10 @@ export async function saveCategoryAction(
     .eq("slug", slug)
     .neq("id", parsed.data.id ?? "");
   if (existing && existing.length > 0) {
-    return { error: "A category with a similar name already exists." };
+    return { error: "A category with this slug already exists. Please choose a different slug." };
   }
 
-  const values: {
-    name: string;
-    slug: string;
-    sort_order: number;
-    image_url: string | null;
-    parent_id?: string | null;
-  } = {
+  const values: Record<string, unknown> = {
     name: parsed.data.name,
     slug,
     sort_order: parsed.data.sort_order,
@@ -126,6 +152,15 @@ export async function saveCategoryAction(
   };
   if (parsed.data.parent_id !== undefined) {
     values.parent_id = parsed.data.parent_id ?? null;
+  }
+  if (parsed.data.show_in_menu !== undefined) {
+    values.show_in_menu = parsed.data.show_in_menu;
+  }
+  if (parsed.data.is_active !== undefined) {
+    values.is_active = parsed.data.is_active;
+  }
+  if (parsed.data.description !== undefined) {
+    values.description = parsed.data.description ?? null;
   }
 
   const { error } = parsed.data.id
@@ -141,7 +176,7 @@ export async function saveCategoryAction(
   }
 
   const oldImagePath = storagePathFromPublicUrl(previous.data?.image_url);
-  const newImagePath = storagePathFromPublicUrl(values.image_url);
+  const newImagePath = storagePathFromPublicUrl(values.image_url as string | null | undefined);
   if (oldImagePath && oldImagePath !== newImagePath) {
     const { error: removeError } = await supabase.storage
       .from("product-images")
@@ -187,6 +222,17 @@ export async function deleteCategoryAction(
     log.error("category lookup failed", { code: lookupError.code });
     return { error: "Something went wrong. Please try again." };
   }
+  // Check for child categories first
+  const { count: childCount, error: childCountError } = await supabase
+    .from("categories")
+    .select("id", { count: "exact", head: true })
+    .eq("parent_id", id.data);
+  if (!childCountError && (childCount ?? 0) > 0) {
+    return {
+      error: `Cannot delete: this category has ${childCount} sub-categories. Delete or move them first.`,
+    };
+  }
+
   const { count, error: countError } = await supabase
     .from("products")
     .select("id", { count: "exact", head: true })
@@ -197,7 +243,7 @@ export async function deleteCategoryAction(
   }
   if ((count ?? 0) > 0) {
     return {
-      error: `This category has ${count ?? 0} products. Move them to another category first.`,
+      error: `Cannot delete: this category has ${count ?? 0} products. Move them to another category first.`,
     };
   }
 

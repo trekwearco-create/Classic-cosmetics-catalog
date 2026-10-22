@@ -11,12 +11,14 @@ import NewsSection from "@/components/public/NewsSection";
 import SearchBar from "@/components/public/SearchBar";
 import LoadMore from "@/components/public/LoadMore";
 import ProductCard from "@/components/public/ProductCard";
+import KoreanBeautyShowcase from "@/components/public/KoreanBeautyShowcase";
 import {
   listCategories,
   PAGE_SIZE,
   searchProductCards,
   getBestSellers,
   getLatestDrop,
+  getHomeSectionsWithBanners,
 } from "@/lib/data";
 
 export const metadata: Metadata = {
@@ -101,12 +103,20 @@ export default async function HomePage({
     );
   }
 
-  // Highfy-style full Home Page Experience
-  const [categories, bestSellers, latestDrop] = await Promise.all([
+  // Highfy-style full Home Page Experience with database-driven sections
+  const [categories, bestSellers, latestDrop, homeSections] = await Promise.all([
     listCategories(),
     getBestSellers(8),
     getLatestDrop(8),
+    getHomeSectionsWithBanners(),
   ]);
+
+  const sectionsMap = new Map(homeSections.map((s) => [s.key, s]));
+  const isVisible = (key: string) => {
+    const sec = sectionsMap.get(key);
+    return sec ? sec.is_visible : true;
+  };
+  const getBanners = (key: string) => sectionsMap.get(key)?.banners ?? [];
 
   return (
     <main className="mt-3 flex flex-col gap-6 pb-12 sm:mt-5 sm:gap-8 md:gap-10">
@@ -116,38 +126,67 @@ export default async function HomePage({
       </div>
 
       {/* 2. Hero Banner Carousel */}
-      <HeroSlider />
+      {isVisible("hero_slider") && (
+        <HeroSlider banners={getBanners("hero_slider")} />
+      )}
 
       {/* 3. Circular Category Stories Rail */}
-      <CategoryRail categories={categories} />
+      {isVisible("category_icons") && (
+        <CategoryRail categories={categories} />
+      )}
 
       {/* 4. Best Sellers Rail / Collection */}
-      <ProductRail
-        title="Best Sellers"
-        subtitle="Customer Favorites"
-        viewAllHref="/categories"
-        products={bestSellers}
-      />
+      {isVisible("best_sellers") && (
+        <ProductRail
+          title="Best Sellers"
+          subtitle="Customer Favorites"
+          viewAllHref="/categories"
+          products={bestSellers}
+        />
+      )}
 
       {/* 5. Must-Haves Promo Duo Banners */}
-      <PromoBanners />
+      {isVisible("must_haves") && (
+        <PromoBanners banners={getBanners("must_haves")} />
+      )}
 
-      {/* 6. Top Brands Showcase */}
-      <BrandShowcase />
+      {/* 6. Korean Beauty 3x3 Tiles Showcase */}
+      {isVisible("korean_beauty") && (
+        <KoreanBeautyShowcase
+          banners={getBanners("korean_beauty")}
+          title={sectionsMap.get("korean_beauty")?.title || "Korean Beauty Essentials"}
+        />
+      )}
 
-      {/* 7. Latest Drop (New Arrivals) */}
-      <ProductRail
-        title="Latest Drop"
-        subtitle="Fresh Arrivals"
-        viewAllHref="/categories"
-        products={latestDrop}
-      />
+      {/* 7. Top Brands Showcase */}
+      {isVisible("shop_imported") && (
+        <BrandShowcase />
+      )}
 
-      {/* 8. Trust Guarantees */}
-      <TrustBadges />
+      {/* 8. Shop Local Promo */}
+      {isVisible("shop_local") && (
+        <PromoBanners banners={getBanners("shop_local")} />
+      )}
 
-      {/* 9. Latest News & Beauty Journal */}
-      <NewsSection />
+      {/* 9. Latest Drop (New Arrivals) */}
+      {isVisible("latest_drop") && (
+        <ProductRail
+          title="Latest Drop"
+          subtitle="Fresh Arrivals"
+          viewAllHref="/categories"
+          products={latestDrop}
+        />
+      )}
+
+      {/* 10. Trust Guarantees */}
+      {isVisible("trust_icons") && (
+        <TrustBadges />
+      )}
+
+      {/* 11. Latest News & Beauty Journal */}
+      {isVisible("latest_news") && (
+        <NewsSection />
+      )}
     </main>
   );
 }

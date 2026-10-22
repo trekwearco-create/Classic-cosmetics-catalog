@@ -4,8 +4,9 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import CartLink from "@/components/public/CartLink";
+import type { CategoryTreeNode, MenuLinkRow } from "@/lib/data";
 
-/* ── Icons (inline SVG, no external dep) ────────────────────── */
+/* ── Inline SVG Icons ────────────────────────────────────────── */
 function IconMenu() {
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -37,6 +38,15 @@ function IconSearch() {
   );
 }
 
+function IconChevronDown() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <polyline points="6 9 12 15 18 9" />
+    </svg>
+  );
+}
+
 function IconChevronRight() {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -46,29 +56,34 @@ function IconChevronRight() {
   );
 }
 
-/* ── Static nav data (will come from DB in Phase 7) ─────────── */
-const NAV_ITEMS = [
-  { label: "Skincare",        href: "/categories/skincare" },
-  { label: "Makeup & Nails",  href: "/categories/makeup-nails" },
-  { label: "Perfumes",        href: "/categories/perfumes" },
-  { label: "Haircare",        href: "/categories/haircare" },
-  { label: "Bodycare",        href: "/categories/bodycare" },
-  { label: "Beauty Tools",    href: "/categories/beauty-tools" },
-  { label: "Personal Care",   href: "/categories/personal-care" },
-  { label: "Brands",          href: "/brands" },
+/* ── Fallback Category Tree if DB has no categories loaded ─── */
+const DEFAULT_TREE: CategoryTreeNode[] = [
+  { id: "1", name: "Skincare", slug: "skincare", sort_order: 10, parent_id: null, image_url: null, show_in_menu: true, is_active: true, children: [] },
+  { id: "2", name: "Makeup & Nails", slug: "makeup-nails", sort_order: 20, parent_id: null, image_url: null, show_in_menu: true, is_active: true, children: [] },
+  { id: "3", name: "Perfumes", slug: "perfumes", sort_order: 30, parent_id: null, image_url: null, show_in_menu: true, is_active: true, children: [] },
+  { id: "4", name: "Haircare", slug: "haircare", sort_order: 40, parent_id: null, image_url: null, show_in_menu: true, is_active: true, children: [] },
+  { id: "5", name: "Bodycare", slug: "bodycare", sort_order: 50, parent_id: null, image_url: null, show_in_menu: true, is_active: true, children: [] },
+  { id: "6", name: "Beauty Tools", slug: "beauty-tools", sort_order: 60, parent_id: null, image_url: null, show_in_menu: true, is_active: true, children: [] },
+  { id: "7", name: "Personal Care", slug: "personal-care", sort_order: 70, parent_id: null, image_url: null, show_in_menu: true, is_active: true, children: [] },
 ];
 
-/* ── Drawer ──────────────────────────────────────────────────── */
+/* ── Mobile Drawer ─────────────────────────────────────────── */
 function MobileDrawer({
   open,
   onClose,
+  tree,
+  menuLinks,
 }: {
   open: boolean;
   onClose: () => void;
+  tree: CategoryTreeNode[];
+  menuLinks?: MenuLinkRow[];
 }) {
   const drawerRef = useRef<HTMLDivElement>(null);
+  const [expandedL1, setExpandedL1] = useState<string | null>(null);
+  const [expandedL2, setExpandedL2] = useState<string | null>(null);
+  const [supportOpen, setSupportOpen] = useState(false);
 
-  // trap focus & close on Escape
   useEffect(() => {
     if (!open) return;
     const el = drawerRef.current;
@@ -88,13 +103,7 @@ function MobileDrawer({
 
   return (
     <>
-      {/* overlay */}
-      <div
-        className="drawer-overlay"
-        aria-hidden="true"
-        onClick={onClose}
-      />
-      {/* drawer panel */}
+      <div className="drawer-overlay" aria-hidden="true" onClick={onClose} />
       <div
         ref={drawerRef}
         className="drawer"
@@ -110,7 +119,7 @@ function MobileDrawer({
               alt="Classic Cosmetics"
               width={100}
               height={40}
-              className="h-10 w-auto object-contain"
+              className="h-9 w-auto object-contain"
               priority
             />
           </Link>
@@ -125,31 +134,181 @@ function MobileDrawer({
         </div>
 
         <nav className="drawer-body" aria-label="Mobile navigation">
-          {NAV_ITEMS.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="drawer-nav-item"
-              onClick={onClose}
-            >
-              <span>{item.label}</span>
-              <IconChevronRight />
-            </Link>
-          ))}
-          <div
-            style={{
-              borderTop: "1px solid var(--line)",
-              marginTop: 8,
-              padding: "16px 20px",
-              display: "flex",
-              flexDirection: "column",
-              gap: 4,
-            }}
-          >
-            <Link href="/support/about-us"  className="drawer-nav-item is-sub" onClick={onClose}>About Us</Link>
-            <Link href="/support/contact-us" className="drawer-nav-item is-sub" onClick={onClose}>Contact Us</Link>
-            <Link href="/support/faqs"      className="drawer-nav-item is-sub" onClick={onClose}>FAQs</Link>
-            <Link href="/track-order"       className="drawer-nav-item is-sub" onClick={onClose}>Track Your Order</Link>
+          {tree.map((l1) => {
+            const hasL2 = l1.children && l1.children.length > 0;
+            const isL1Open = expandedL1 === l1.id;
+
+            return (
+              <div key={l1.id} className="border-b border-gray-100">
+                <div className="flex items-center justify-between">
+                  <Link
+                    href={`/categories/${l1.slug}`}
+                    className="flex-1 py-3 px-5 text-sm font-bold text-gray-900 hover:text-emerald-700"
+                    onClick={onClose}
+                  >
+                    {l1.name}
+                  </Link>
+                  {hasL2 && (
+                    <button
+                      type="button"
+                      onClick={() => setExpandedL1(isL1Open ? null : l1.id)}
+                      className="p-3 text-gray-400 hover:text-gray-700"
+                      aria-label={`Toggle ${l1.name} subcategories`}
+                    >
+                      <span className={`inline-block transition-transform duration-150 ${isL1Open ? "rotate-90" : ""}`}>
+                        <IconChevronRight />
+                      </span>
+                    </button>
+                  )}
+                </div>
+
+                {/* Level 2 Accordion */}
+                {hasL2 && isL1Open && (
+                  <div className="bg-gray-50/80 px-4 py-2 space-y-1">
+                    {/* All <Category> link */}
+                    <Link
+                      href={`/categories/${l1.slug}`}
+                      className="block py-1.5 px-3 text-xs font-bold text-emerald-700 hover:underline"
+                      onClick={onClose}
+                    >
+                      All {l1.name} &rarr;
+                    </Link>
+
+                    {l1.children.map((l2) => {
+                      const hasL3 = l2.children && l2.children.length > 0;
+                      const isL2Open = expandedL2 === l2.id;
+
+                      return (
+                        <div key={l2.id} className="rounded-lg bg-white/60 p-1">
+                          <div className="flex items-center justify-between">
+                            <Link
+                              href={`/categories/${l2.slug}`}
+                              className="flex-1 py-1 px-2 text-xs font-semibold text-gray-800 hover:text-emerald-700"
+                              onClick={onClose}
+                            >
+                              {l2.name}
+                            </Link>
+                            {hasL3 && (
+                              <button
+                                type="button"
+                                onClick={() => setExpandedL2(isL2Open ? null : l2.id)}
+                                className="p-1 text-gray-400"
+                              >
+                                <span className={`inline-block transition-transform duration-150 ${isL2Open ? "rotate-90" : ""}`}>
+                                  <IconChevronRight />
+                                </span>
+                              </button>
+                            )}
+                          </div>
+
+                          {/* Level 3 Children */}
+                          {hasL3 && isL2Open && (
+                            <div className="pl-4 pr-2 py-1 space-y-1 border-l-2 border-emerald-300 ml-2 mt-1">
+                              {l2.children.map((l3) => (
+                                <Link
+                                  key={l3.id}
+                                  href={`/categories/${l3.slug}`}
+                                  className="block py-1 text-[11px] text-gray-600 hover:text-emerald-700"
+                                  onClick={onClose}
+                                >
+                                  {l3.name}
+                                </Link>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+
+          {/* Non-category navigation links */}
+          <div className="border-t border-gray-200 mt-2 pt-2 bg-gray-50/50">
+            {menuLinks && menuLinks.length > 0 ? (
+              menuLinks.map((link) => (
+                <div key={link.id}>
+                  {link.children && link.children.length > 0 ? (
+                    <div className="px-5 py-2">
+                      <p className="text-sm font-semibold text-gray-700 py-1">{link.title}</p>
+                      <div className="mt-1 space-y-1 pl-3 border-l border-gray-200">
+                        {link.children.map((child) => (
+                          <Link
+                            key={child.id}
+                            href={child.url}
+                            className="block text-xs text-gray-600 hover:text-emerald-700 py-1"
+                            onClick={onClose}
+                          >
+                            {child.title}
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <Link
+                      href={link.url}
+                      className="drawer-nav-item !border-none !min-h-[44px] text-sm font-semibold"
+                      onClick={onClose}
+                    >
+                      <span>{link.title}</span>
+                      <IconChevronRight />
+                    </Link>
+                  )}
+                </div>
+              ))
+            ) : (
+              <>
+                <Link
+                  href="/brands"
+                  className="drawer-nav-item !border-none !min-h-[44px] text-sm font-semibold"
+                  onClick={onClose}
+                >
+                  <span>Brands</span>
+                  <IconChevronRight />
+                </Link>
+
+                {/* Support section */}
+                <div className="px-5 py-2">
+                  <button
+                    type="button"
+                    onClick={() => setSupportOpen(!supportOpen)}
+                    className="flex w-full items-center justify-between text-sm font-semibold text-gray-700 py-1"
+                  >
+                    <span>Support & Help</span>
+                    <span className={`transition-transform duration-150 ${supportOpen ? "rotate-90" : ""}`}>
+                      <IconChevronRight />
+                    </span>
+                  </button>
+                  {supportOpen && (
+                    <div className="mt-2 space-y-1.5 pl-3 border-l border-gray-200">
+                      <Link href="/support/about-us" className="block text-xs text-gray-600 hover:text-emerald-700 py-1" onClick={onClose}>About Us</Link>
+                      <Link href="/support/contact-us" className="block text-xs text-gray-600 hover:text-emerald-700 py-1" onClick={onClose}>Contact Us</Link>
+                      <Link href="/support/faqs" className="block text-xs text-gray-600 hover:text-emerald-700 py-1" onClick={onClose}>FAQs</Link>
+                      <Link href="/support/return-and-exchange" className="block text-xs text-gray-600 hover:text-emerald-700 py-1" onClick={onClose}>Return & Exchange</Link>
+                    </div>
+                  )}
+                </div>
+
+                <Link
+                  href="/reviews"
+                  className="drawer-nav-item !border-none !min-h-[44px] text-sm font-semibold"
+                  onClick={onClose}
+                >
+                  <span>Reviews</span>
+                  <IconChevronRight />
+                </Link>
+                <Link
+                  href="/track-order"
+                  className="drawer-nav-item !border-none !min-h-[44px] text-sm font-semibold"
+                  onClick={onClose}
+                >
+                  <span>Track Your Order</span>
+                  <IconChevronRight />
+                </Link>
+              </>
+            )}
           </div>
         </nav>
       </div>
@@ -157,12 +316,21 @@ function MobileDrawer({
   );
 }
 
-/* ── Header ──────────────────────────────────────────────────── */
-export default function Header() {
-  const [drawerOpen, setDrawerOpen]   = useState(false);
-  const [scrolled,   setScrolled]     = useState(false);
+/* ── Main Header Component ─────────────────────────────────── */
+export default function Header({
+  categoryTree = [],
+  menuLinks = [],
+}: {
+  categoryTree?: CategoryTreeNode[];
+  menuLinks?: MenuLinkRow[];
+}) {
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const [activeMegaCategory, setActiveMegaCategory] = useState<CategoryTreeNode | null>(null);
+  const megaMenuTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // shadow on scroll
+  const tree = categoryTree.length > 0 ? categoryTree : DEFAULT_TREE;
+
   useEffect(() => {
     function onScroll() {
       setScrolled(window.scrollY > 4);
@@ -171,17 +339,33 @@ export default function Header() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const openDrawer  = useCallback(() => setDrawerOpen(true),  []);
+  const openDrawer = useCallback(() => setDrawerOpen(true), []);
   const closeDrawer = useCallback(() => setDrawerOpen(false), []);
+
+  const handleMouseEnter = (cat: CategoryTreeNode) => {
+    if (megaMenuTimeoutRef.current) clearTimeout(megaMenuTimeoutRef.current);
+    if (cat.children && cat.children.length > 0) {
+      setActiveMegaCategory(cat);
+    } else {
+      setActiveMegaCategory(null);
+    }
+  };
+
+  const handleMouseLeave = () => {
+    megaMenuTimeoutRef.current = setTimeout(() => {
+      setActiveMegaCategory(null);
+    }, 150);
+  };
 
   return (
     <>
-      <header className={`site-header${scrolled ? " scrolled" : ""}`}>
+      <header
+        className={`site-header relative${scrolled ? " scrolled" : ""}`}
+        onMouseLeave={handleMouseLeave}
+      >
         <div className="wrap site-header-inner">
-
-          {/* ── Left: hamburger (mobile) + desktop nav ── */}
-          <div className="header-start">
-            {/* hamburger — mobile only */}
+          {/* Left: Mobile hamburger + Desktop Nav Links */}
+          <div className="header-start flex items-center">
             <button
               type="button"
               className="hamburger-btn lg:hidden"
@@ -192,24 +376,41 @@ export default function Header() {
               <IconMenu />
             </button>
 
-            {/* desktop nav links */}
-            <nav className="desktop-nav" aria-label="Main navigation">
-              {NAV_ITEMS.slice(0, 6).map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className="desktop-nav-link"
-                >
-                  {item.label}
-                </Link>
-              ))}
-              <Link href="/brands" className="desktop-nav-link">
+            {/* Desktop Navigation */}
+            <nav className="desktop-nav hidden lg:flex items-center gap-1" aria-label="Main navigation">
+              {tree.slice(0, 7).map((item) => {
+                const hasChildren = item.children && item.children.length > 0;
+                const isExpanded = activeMegaCategory?.id === item.id;
+
+                return (
+                  <div
+                    key={item.id}
+                    onMouseEnter={() => handleMouseEnter(item)}
+                    className="relative"
+                  >
+                    <Link
+                      href={`/categories/${item.slug}`}
+                      className="desktop-nav-link text-[13px] font-bold"
+                      aria-expanded={isExpanded}
+                    >
+                      <span>{item.name}</span>
+                      {hasChildren && (
+                        <span className="opacity-60 text-[10px]">
+                          <IconChevronDown />
+                        </span>
+                      )}
+                    </Link>
+                  </div>
+                );
+              })}
+
+              <Link href="/brands" className="desktop-nav-link text-[13px] font-bold">
                 Brands
               </Link>
             </nav>
           </div>
 
-          {/* ── Centre: Logo ── */}
+          {/* Centre: Logo */}
           <div className="flex justify-center">
             <Link href="/" aria-label="Classic Cosmetics home">
               <Image
@@ -218,28 +419,95 @@ export default function Header() {
                 width={130}
                 height={52}
                 priority
-                className="h-[52px] w-auto object-contain md:h-[58px]"
+                className="h-[48px] w-auto object-contain md:h-[54px]"
               />
             </Link>
           </div>
 
-          {/* ── Right: Search + Cart ── */}
-          <div className="header-end">
-            {/* search icon — links to search overlay (built in Phase 8) */}
+          {/* Right: Search & Cart */}
+          <div className="header-end flex items-center gap-2">
             <Link
-              href="/search"
+              href="/#search-products-heading"
               className="header-icon-btn"
-              aria-label="Search"
+              aria-label="Search catalog"
             >
               <IconSearch />
             </Link>
             <CartLink />
           </div>
         </div>
+
+        {/* Desktop Mega Menu Dropdown */}
+        {activeMegaCategory && activeMegaCategory.children && activeMegaCategory.children.length > 0 && (
+          <div
+            className="mega-menu absolute left-0 right-0 top-full z-50 border-t-2 border-emerald-700 bg-white shadow-2xl transition-all"
+            onMouseEnter={() => {
+              if (megaMenuTimeoutRef.current) clearTimeout(megaMenuTimeoutRef.current);
+            }}
+            onMouseLeave={handleMouseLeave}
+          >
+            <div className="wrap py-8">
+              <div className="mb-4 flex items-center justify-between border-b border-gray-100 pb-3">
+                <div className="flex items-center gap-3">
+                  <h2 className="text-xl font-extrabold text-gray-900" style={{ fontFamily: "var(--font-display)" }}>
+                    {activeMegaCategory.name}
+                  </h2>
+                  <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-800">
+                    Explore All Collections
+                  </span>
+                </div>
+                <Link
+                  href={`/categories/${activeMegaCategory.slug}`}
+                  onClick={() => setActiveMegaCategory(null)}
+                  className="group inline-flex items-center gap-1 text-xs font-extrabold text-emerald-700 hover:text-emerald-800 hover:underline"
+                >
+                  <span>All {activeMegaCategory.name}</span>
+                  <span className="transition-transform group-hover:translate-x-1">&rarr;</span>
+                </Link>
+              </div>
+
+              {/* 3-level grid */}
+              <div className="grid grid-cols-2 gap-x-6 gap-y-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+                {activeMegaCategory.children.map((subcat) => (
+                  <div key={subcat.id} className="space-y-2">
+                    <Link
+                      href={`/categories/${subcat.slug}`}
+                      onClick={() => setActiveMegaCategory(null)}
+                      className="block text-xs font-bold uppercase tracking-wider text-gray-900 hover:text-emerald-700"
+                    >
+                      {subcat.name}
+                    </Link>
+
+                    {subcat.children && subcat.children.length > 0 && (
+                      <ul className="space-y-1.5 border-l border-gray-100 pl-2.5">
+                        {subcat.children.map((child) => (
+                          <li key={child.id}>
+                            <Link
+                              href={`/categories/${child.slug}`}
+                              onClick={() => setActiveMegaCategory(null)}
+                              className="block text-xs text-gray-600 transition hover:text-emerald-700 hover:translate-x-0.5"
+                            >
+                              {child.name}
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </header>
 
-      {/* Mobile drawer */}
-      <MobileDrawer open={drawerOpen} onClose={closeDrawer} />
+      {/* Mobile Drawer */}
+      <MobileDrawer
+        open={drawerOpen}
+        onClose={closeDrawer}
+        tree={tree}
+        menuLinks={menuLinks}
+      />
     </>
   );
 }

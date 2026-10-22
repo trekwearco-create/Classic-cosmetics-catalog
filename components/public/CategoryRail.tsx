@@ -4,13 +4,13 @@ import type { CategoryRow } from "@/lib/data";
 
 const DEFAULT_CATEGORIES = [
   { name: "Skincare", slug: "skincare", emoji: "✨", bg: "#fef3c7", border: "#fde68a" },
-  { name: "Makeup & Nails", slug: "makeup-nails", emoji: "💄", bg: "#fce7f3", border: "#fbcfe8" },
-  { name: "Perfumes", slug: "perfumes", emoji: "🌸", bg: "#ede9fe", border: "#ddd6fe" },
+  { name: "Makeup", slug: "makeup-nails", emoji: "💄", bg: "#fce7f3", border: "#fbcfe8" },
   { name: "Haircare", slug: "haircare", emoji: "🌿", bg: "#dcfce7", border: "#bbf7d0" },
-  { name: "Bodycare", slug: "bodycare", emoji: "🫧", bg: "#e0f2fe", border: "#bae6fd" },
+  { name: "K Beauty", slug: "skincare-korean-beauty", emoji: "🌸", bg: "#fee2e2", border: "#fecaca" },
   { name: "Beauty Tools", slug: "beauty-tools", emoji: "🪞", bg: "#ffedd5", border: "#fed7aa" },
   { name: "Personal Care", slug: "personal-care", emoji: "🧴", bg: "#fae8ff", border: "#f5d0fe" },
-  { name: "Brands", slug: "brands", emoji: "⭐", bg: "#f3f4f6", border: "#e5e7eb" },
+  { name: "Fragrances", slug: "perfumes", emoji: "💎", bg: "#ede9fe", border: "#ddd6fe" },
+  { name: "Hair Tools", slug: "haircare-hair-styling-tools", emoji: "💇", bg: "#e0f2fe", border: "#bae6fd" },
 ];
 
 export default function CategoryRail({

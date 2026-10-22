@@ -95,7 +95,7 @@ export default function ProductCard({ product }: { product: ProductCardRow }) {
             className="mt-1.5 flex min-h-4 items-center gap-1"
             aria-label="Available shades"
           >
-            {product.shade_colors.slice(0, 7).map((color, i) => (
+            {product.shade_colors.slice(0, 7).map((color: string, i: number) => (
               <span
                 key={`${color}-${i}`}
                 className="inline-block h-3.5 w-3.5 rounded-full border"

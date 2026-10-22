@@ -3,6 +3,9 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import Link from "next/link";
 
+import Image from "next/image";
+import type { BannerRow } from "@/lib/data";
+
 type Slide = {
   id: string;
   badge?: string;
@@ -13,9 +16,11 @@ type Slide = {
   bgGradient: string;
   accentColor: string;
   tag: string;
+  imageUrlDesktop?: string | null;
+  imageUrlMobile?: string | null;
 };
 
-const SLIDES: Slide[] = [
+const DEFAULT_SLIDES: Slide[] = [
   {
     id: "glow-hours",
     badge: "Limited Time Offer",
@@ -33,7 +38,7 @@ const SLIDES: Slide[] = [
     title: "Original K-Beauty Imports",
     subtitle: "Hydrating Essences, Capsule Mists & Glass Skin Essentials",
     ctaText: "Explore K-Beauty",
-    ctaLink: "/categories/skincare",
+    ctaLink: "/categories/skincare-korean-beauty",
     bgGradient: "linear-gradient(135deg, #18233a 0%, #203a5c 50%, #2f567f 100%)",
     accentColor: "#6ee7b7",
     tag: "KOREAN BEAUTY",
@@ -62,19 +67,41 @@ const SLIDES: Slide[] = [
   },
 ];
 
-export default function HeroSlider() {
+export default function HeroSlider({
+  banners = [],
+}: {
+  banners?: BannerRow[];
+}) {
+  const slides: Slide[] = banners.length > 0
+    ? banners.map((b, idx) => {
+        const fallback = DEFAULT_SLIDES[idx % DEFAULT_SLIDES.length]!;
+        return {
+          id: b.id,
+          badge: b.extra_text || fallback.badge,
+          title: b.title || fallback.title,
+          subtitle: b.alt || fallback.subtitle,
+          ctaText: "Explore Now",
+          ctaLink: b.link_url || fallback.ctaLink,
+          bgGradient: fallback.bgGradient,
+          accentColor: fallback.accentColor,
+          tag: b.extra_text || fallback.tag,
+          imageUrlDesktop: b.image_url_desktop,
+          imageUrlMobile: b.image_url_mobile,
+        };
+      })
+    : DEFAULT_SLIDES;
   const [current, setCurrent] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const touchStartX = useRef<number | null>(null);
   const touchEndX = useRef<number | null>(null);
 
   const nextSlide = useCallback(() => {
-    setCurrent((prev) => (prev + 1) % SLIDES.length);
-  }, []);
+    setCurrent((prev) => (prev + 1) % slides.length);
+  }, [slides.length]);
 
   const prevSlide = useCallback(() => {
-    setCurrent((prev) => (prev - 1 + SLIDES.length) % SLIDES.length);
-  }, []);
+    setCurrent((prev) => (prev - 1 + slides.length) % slides.length);
+  }, [slides.length]);
 
   // Auto-play
   useEffect(() => {
@@ -118,7 +145,7 @@ export default function HeroSlider() {
         className="flex transition-transform duration-500 ease-out"
         style={{ transform: `translateX(-${current * 100}%)` }}
       >
-        {SLIDES.map((slide) => (
+        {slides.map((slide) => (
           <div
             key={slide.id}
             className="relative min-w-full flex-shrink-0"
@@ -126,6 +153,19 @@ export default function HeroSlider() {
               background: slide.bgGradient,
             }}
           >
+            {slide.imageUrlDesktop && (
+              <div className="absolute inset-0 z-0">
+                <Image
+                  src={slide.imageUrlDesktop}
+                  alt={slide.title}
+                  fill
+                  unoptimized
+                  priority
+                  className="object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent" />
+              </div>
+            )}
             <div className="relative z-10 flex min-h-[260px] flex-col justify-between p-6 text-white sm:min-h-[320px] sm:p-10 md:min-h-[380px] md:p-12 lg:min-h-[420px]">
               {/* Top Tag & Badge */}
               <div className="flex flex-wrap items-center gap-2">
@@ -238,7 +278,7 @@ export default function HeroSlider() {
 
       {/* Slide Indicators / Dots */}
       <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-1.5 sm:bottom-4">
-        {SLIDES.map((_, idx) => (
+        {slides.map((_, idx) => (
           <button
             key={idx}
             type="button"

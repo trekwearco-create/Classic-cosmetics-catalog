@@ -1,6 +1,80 @@
 import Link from "next/link";
+import Image from "next/image";
+import type { BannerRow } from "@/lib/data";
 
-export default function PromoBanners() {
+export default function PromoBanners({
+  banners = [],
+}: {
+  banners?: BannerRow[];
+}) {
+  if (banners.length > 0) {
+    return (
+      <section aria-label="Curated promotions" className="py-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {banners.map((b, idx) => (
+            <div
+              key={b.id}
+              className="group relative overflow-hidden rounded-2xl p-6 text-white shadow-md transition-transform duration-300 hover:shadow-lg sm:p-8"
+              style={{
+                background:
+                  idx % 2 === 0
+                    ? "linear-gradient(135deg, #0d3b27 0%, #175e3c 100%)"
+                    : "linear-gradient(135deg, #4c1d2f 0%, #7c2d4d 100%)",
+              }}
+            >
+              {b.image_url_desktop && (
+                <div className="absolute inset-0 z-0">
+                  <Image
+                    src={b.image_url_desktop}
+                    alt={b.alt || b.title || ""}
+                    fill
+                    unoptimized
+                    className="object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+                </div>
+              )}
+              <div className="relative z-10 flex h-full flex-col justify-between">
+                <div>
+                  {b.extra_text && (
+                    <span className="inline-block rounded-full bg-white/20 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-white">
+                      {b.extra_text}
+                    </span>
+                  )}
+                  {b.title && (
+                    <h3
+                      className="mt-3 text-xl font-extrabold sm:text-2xl"
+                      style={{ fontFamily: "var(--font-display, serif)" }}
+                    >
+                      {b.title}
+                    </h3>
+                  )}
+                  {b.alt && (
+                    <p className="mt-1 text-xs text-white/80 sm:text-sm">
+                      {b.alt}
+                    </p>
+                  )}
+                </div>
+                {b.link_url && (
+                  <div className="mt-6">
+                    <Link
+                      href={b.link_url}
+                      className="inline-flex items-center gap-1.5 rounded-full bg-white px-5 py-2.5 text-xs font-bold text-gray-900 transition-all hover:bg-emerald-50 active:scale-95"
+                    >
+                      <span>Explore Collection</span>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                        <polyline points="9 18 15 12 9 6" />
+                      </svg>
+                    </Link>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+    );
+  }
   return (
     <section aria-label="Curated promotions" className="py-4">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
