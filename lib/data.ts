@@ -31,6 +31,8 @@ export type ProductCardRow = {
   category_name: string;
   cover_url: string | null;
   shade_colors: string[];
+  price: number | null;
+  discount_price: number | null;
 };
 
 async function loadCategories(): Promise<CategoryRow[]> {
@@ -94,6 +96,8 @@ async function loadProductCards({
       name: string;
       category_id: string;
       in_stock: boolean;
+      price: number | null;
+      discount_price: number | null;
     }>;
 
     if (rows.length === 0) return [];
@@ -158,6 +162,8 @@ async function loadProductCards({
       cover_url:
         coverByProduct.get(r.id) ?? firstByProduct.get(r.id) ?? null,
       shade_colors: shadesByProduct.get(r.id) ?? [],
+      price: r.price ?? null,
+      discount_price: r.discount_price ?? null,
     }));
   } catch {
     log.warn("public product search failed");

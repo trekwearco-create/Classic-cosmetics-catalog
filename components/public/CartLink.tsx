@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-
 import { useCart } from "@/components/public/CartProvider";
 
 export default function CartLink() {
@@ -9,17 +8,17 @@ export default function CartLink() {
   return (
     <Link
       href="/cart"
-      className="col-start-3 row-start-1 inline-flex h-11 w-11 items-center justify-self-end rounded-full"
+      className="header-icon-btn"
       aria-label={ready ? `Cart, ${itemCount} items` : "Cart"}
     >
-      <span className="relative grid h-11 w-11 place-items-center">
+      <span className="relative">
         <svg
           key={bumpKey}
           viewBox="0 0 24 24"
-          width="24"
-          height="24"
+          width="22"
+          height="22"
           fill="none"
-          stroke="var(--ink)"
+          stroke="currentColor"
           strokeLinecap="round"
           strokeLinejoin="round"
           strokeWidth="2"

@@ -26,10 +26,10 @@ const buildCsp = (turnstile: boolean) =>
   [
     "default-src 'self'",
     `img-src 'self' data: blob:${storageHostname ? ` https://${storageHostname}` : ""}`,
-    "style-src 'self' 'unsafe-inline'",
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     `script-src 'self' 'unsafe-inline'${isProd ? "" : " 'unsafe-eval'"}${turnstile ? ` ${CF}` : ""}`,
-    "font-src 'self'",
-    `connect-src 'self'${turnstile ? ` ${CF}` : ""}`,
+    "font-src 'self' https://fonts.gstatic.com",
+    `connect-src 'self' https://fonts.googleapis.com${turnstile ? ` ${CF}` : ""}`,
     turnstile ? `frame-src ${CF}` : "frame-src 'none'",
     "object-src 'none'",
     "base-uri 'self'",
@@ -50,6 +50,7 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  cacheComponents: true,
   poweredByHeader: false,
   productionBrowserSourceMaps: false,
   reactStrictMode: true,
@@ -67,7 +68,7 @@ const nextConfig: NextConfig = {
   },
   experimental: {
     serverActions: {
-      bodySizeLimit: "2mb",
+      bodySizeLimit: "8mb",
       allowedOrigins:
         siteHostname && !siteHostname.startsWith("localhost")
           ? [siteHostname]

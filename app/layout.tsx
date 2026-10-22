@@ -12,7 +12,7 @@ const bodoni = Bodoni_Moda({
 
 const figtree = Figtree({
   subsets: ["latin"],
-  weight: ["400", "600", "700"],
+  weight: ["400", "500", "600", "700"],
   variable: "--font-figtree",
   display: "swap",
 });
@@ -40,7 +40,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: "#EFE5D8",
+  themeColor: "#1F7A4D",
 };
 
 export default function RootLayout({

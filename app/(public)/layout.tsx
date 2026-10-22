@@ -1,4 +1,5 @@
 import Header from "@/components/public/Header";
+import PromoStrip from "@/components/public/PromoStrip";
 import CatalogSync from "@/components/public/CatalogSync";
 import { CartProvider } from "@/components/public/CartProvider";
 
@@ -8,10 +9,12 @@ export default function PublicLayout({
   return (
     <CartProvider>
       <CatalogSync />
+      {/* Promo strip sits above the sticky header */}
+      <PromoStrip />
       <Header />
-      <div className="wrap" style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}>
+      <main id="main-content">
         {children}
-      </div>
+      </main>
     </CartProvider>
   );
 }
