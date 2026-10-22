@@ -197,9 +197,42 @@ export default function CartPage({
     );
   }
 
+  const totalItemsCount = items.reduce((sum, item) => sum + item.quantity, 0);
+
   return (
-    <main className="mx-auto w-full max-w-full py-8 md:py-12">
-      <h1 className="text-3xl md:text-4xl">Your Cart</h1>
+    <main className="mx-auto w-full max-w-full py-6 md:py-10">
+      {/* Breadcrumb */}
+      <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-gray-500 mb-3">
+        <Link href="/" className="hover:text-emerald-700 hover:underline">
+          Home
+        </Link>
+        <span>/</span>
+        <span className="text-gray-800 font-semibold">Shopping Cart</span>
+      </nav>
+
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <h1 className="text-2xl font-extrabold tracking-tight text-gray-900 sm:text-3xl md:text-4xl" style={{ fontFamily: "var(--font-display, serif)" }}>
+          Your Cart
+        </h1>
+        {items.length > 0 && (
+          <span className="text-xs font-bold text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-full">
+            {totalItemsCount} {totalItemsCount === 1 ? "Item" : "Items"}
+          </span>
+        )}
+      </div>
+
+      {items.length > 0 && (
+        <div className="mt-4 rounded-xl border border-emerald-100 bg-emerald-50/60 p-3.5 text-xs">
+          <div className="flex items-center gap-2 font-bold text-emerald-900">
+            <span>🚚</span>
+            <span>Fast Nationwide Delivery (24 to 72 Hours)</span>
+          </div>
+          <p className="mt-1 text-emerald-700">
+            Orders across Pakistan are packaged securely in temperature-regulated beauty boxes.
+          </p>
+        </div>
+      )}
+
       {storageError ? (
         <p
           className="mt-4 rounded-xl border border-brick p-3 text-sm"
@@ -211,12 +244,16 @@ export default function CartPage({
       {items.length === 0 ? (
         <div className="card mt-6 p-6 text-center md:p-10">
           <p className="text-lg font-semibold">Your cart is empty.</p>
+          <p className="mt-2 text-sm text-gray-500">
+            Explore our curated catalog of authentic skincare, makeup, and perfumes.
+          </p>
           <Link href="/" className="btn-primary mt-5">
             Browse products
           </Link>
         </div>
       ) : (
         <div className="mt-6 grid min-w-0 grid-cols-1 gap-6 md:grid-cols-[minmax(0,1fr)_minmax(280px,0.7fr)]">
+
           <section aria-label="Cart items" className="flex min-w-0 flex-col gap-3">
             {items.map((item) => (
               <article
@@ -360,6 +397,17 @@ export default function CartPage({
             >
               {checking ? "Checking availability…" : "Confirm order"}
             </button>
+
+            <div className="mt-2 flex flex-col gap-1.5 border-t border-gray-100 pt-3 text-[11px] text-gray-500">
+              <div className="flex items-center gap-1.5">
+                <span className="text-emerald-700 font-bold">✓</span>
+                <span>100% Genuine, Authenticity Guaranteed</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-emerald-700 font-bold">⚡</span>
+                <span>Safe Cash on Delivery & Express Dispatch</span>
+              </div>
+            </div>
           </form>
         </div>
       )}
