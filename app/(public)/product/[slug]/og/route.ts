@@ -11,8 +11,6 @@ const MAX_SOURCE_BYTES = 3 * 1024 * 1024;
 const MAX_OUTPUT_BYTES = 300_000;
 const MAX_INPUT_PIXELS = 25_000_000;
 
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
 
 type RouteContext = {
   params: Promise<{ slug: string }>;

@@ -182,6 +182,21 @@ export async function searchProductCards(args: SearchArgs): Promise<ProductCardR
   return cachedProductCards(args.q, args.category, args.page);
 }
 
+export async function getBestSellers(limit = 8): Promise<ProductCardRow[]> {
+  const cards = await searchProductCards({ q: null, category: null, page: 1 });
+  const sorted = [...cards].sort((a, b) => {
+    const aDiscount = a.price && a.discount_price ? (a.price - a.discount_price) / a.price : 0;
+    const bDiscount = b.price && b.discount_price ? (b.price - b.discount_price) / b.price : 0;
+    return bDiscount - aDiscount;
+  });
+  return sorted.slice(0, limit);
+}
+
+export async function getLatestDrop(limit = 8): Promise<ProductCardRow[]> {
+  const cards = await searchProductCards({ q: null, category: null, page: 1 });
+  return cards.slice(0, limit);
+}
+
 export type ProductDetail = {
   id: string;
   slug: string;
