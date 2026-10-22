@@ -202,6 +202,8 @@ export type ProductDetail = {
   slug: string;
   name: string;
   description: string | null;
+  price: number | null;
+  discount_price: number | null;
   in_stock: boolean;
   category_name: string;
   category_slug: string;
@@ -225,7 +227,7 @@ async function loadProductBySlug(
     const { data, error } = await supabase
       .from("products")
       .select(
-        "id, slug, name, description, in_stock, category_id, categories(name, slug)",
+        "id, slug, name, description, price, discount_price, in_stock, category_id, categories(name, slug)",
       )
       .eq("slug", slug)
       .eq("is_visible", true)
@@ -237,6 +239,8 @@ async function loadProductBySlug(
       slug: string;
       name: string;
       description: string | null;
+      price: number | null;
+      discount_price: number | null;
       in_stock: boolean;
       categories: { name: string; slug: string } | null;
     };
@@ -274,6 +278,8 @@ async function loadProductBySlug(
       slug: product.slug,
       name: product.name,
       description: product.description,
+      price: product.price ?? null,
+      discount_price: product.discount_price ?? null,
       in_stock: product.in_stock,
       category_name: product.categories?.name ?? "",
       category_slug: product.categories?.slug ?? "",
