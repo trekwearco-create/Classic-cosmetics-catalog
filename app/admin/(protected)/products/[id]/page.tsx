@@ -40,6 +40,8 @@ export default async function EditProductPage({
           name: product.name,
           slug: product.slug,
           description: product.description ?? "",
+          price: product.price ?? null,
+          discount_price: product.discount_price ?? null,
           is_visible: product.is_visible,
           in_stock: product.in_stock,
           category_id: product.category_id,

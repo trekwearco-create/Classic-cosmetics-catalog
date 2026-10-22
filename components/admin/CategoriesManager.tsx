@@ -163,6 +163,24 @@ export default function CategoriesManager({
                 max={9999}
                 defaultValue={editing?.sort_order ?? 0}
               />
+              <label className="text-sm font-semibold" htmlFor="cat-parent">
+                Parent Category (Optional)
+              </label>
+              <select
+                className="field"
+                id="cat-parent"
+                name="parent_id"
+                defaultValue={editing?.parent_id ?? ""}
+              >
+                <option value="">None (Top-level Category)</option>
+                {categories
+                  .filter((cat) => !editing || cat.id !== editing.id)
+                  .map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </option>
+                  ))}
+              </select>
               <CategoryImageUploader imageUrl={imageUrl} onChange={setImageUrl} />
               {saveState.error ? (
                 <p

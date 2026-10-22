@@ -9,6 +9,7 @@ export type AdminCategory = {
   image_url: string | null;
   sort_order: number;
   product_count: number;
+  parent_id?: string | null;
 };
 
 export async function listCategoriesAdmin(): Promise<AdminCategory[]> {
@@ -26,6 +27,7 @@ export async function listCategoriesAdmin(): Promise<AdminCategory[]> {
       slug: string;
       image_url: string | null;
       sort_order: number;
+      parent_id?: string | null;
       products: { count: number }[] | null;
     };
     return {
@@ -34,6 +36,7 @@ export async function listCategoriesAdmin(): Promise<AdminCategory[]> {
       slug: r.slug,
       image_url: r.image_url,
       sort_order: r.sort_order,
+      parent_id: r.parent_id ?? null,
       product_count: r.products?.[0]?.count ?? 0,
     };
   });
@@ -103,6 +106,8 @@ export type AdminProduct = {
   name: string;
   slug: string;
   description: string | null;
+  price: number | null;
+  discount_price: number | null;
   is_visible: boolean;
   in_stock: boolean;
   category_id: string;
@@ -125,7 +130,7 @@ export async function getProductAdmin(
   const { data, error } = await supabase
     .from("products")
     .select(
-      "id, name, slug, description, is_visible, in_stock, category_id",
+      "id, name, slug, description, price, discount_price, is_visible, in_stock, category_id",
     )
     .eq("id", id)
     .maybeSingle();
@@ -136,6 +141,8 @@ export async function getProductAdmin(
     name: string;
     slug: string;
     description: string | null;
+    price: number | null;
+    discount_price: number | null;
     is_visible: boolean;
     in_stock: boolean;
     category_id: string;
@@ -172,6 +179,8 @@ export async function getProductAdmin(
     name: product.name,
     slug: product.slug,
     description: product.description,
+    price: product.price ?? null,
+    discount_price: product.discount_price ?? null,
     is_visible: product.is_visible,
     in_stock: product.in_stock,
     category_id: product.category_id,

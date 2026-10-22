@@ -35,6 +35,8 @@ const productSchema = z.object({
   name: z.string().trim().min(2).max(120),
   category_id: z.string().uuid(),
   description: z.string().max(2000).nullish(),
+  price: z.number().min(0).nullish(),
+  discount_price: z.number().min(0).nullish(),
   is_visible: z.boolean(),
   in_stock: z.boolean(),
   slug_locked_existing: z.boolean().optional(),
@@ -182,13 +184,15 @@ export async function saveProductAction(
     }
   }
 
-  const productValues = {
+  const productValues: Record<string, unknown> = {
     name: data.name,
     category_id: data.category_id,
     description: data.description ?? null,
     is_visible: data.is_visible,
     in_stock: data.in_stock,
   };
+  if (data.price !== undefined) productValues.price = data.price ?? null;
+  if (data.discount_price !== undefined) productValues.discount_price = data.discount_price ?? null;
 
   const { error: productError } = isUpdate
     ? await supabase.from("products").update(productValues).eq("id", data.id)

@@ -16,6 +16,7 @@ const categorySchema = z.object({
   name: z.string().trim().min(1).max(60),
   sort_order: z.coerce.number().int().min(0).max(9999),
   image_url: z.string().url().max(500).refine(isPublicImageUrl).nullish(),
+  parent_id: z.string().uuid().nullish(),
 });
 
 export type CategoryFormState = {
@@ -82,6 +83,7 @@ export async function saveCategoryAction(
     name: formData.get("name"),
     sort_order: formData.get("sort_order"),
     image_url: formData.get("image_url") || undefined,
+    parent_id: formData.get("parent_id") || undefined,
   });
   if (!parsed.success) {
     return { error: "Enter a category name of up to 60 characters." };
@@ -110,12 +112,21 @@ export async function saveCategoryAction(
     return { error: "A category with a similar name already exists." };
   }
 
-  const values = {
+  const values: {
+    name: string;
+    slug: string;
+    sort_order: number;
+    image_url: string | null;
+    parent_id?: string | null;
+  } = {
     name: parsed.data.name,
     slug,
     sort_order: parsed.data.sort_order,
     image_url: parsed.data.image_url ?? null,
   };
+  if (parsed.data.parent_id !== undefined) {
+    values.parent_id = parsed.data.parent_id ?? null;
+  }
 
   const { error } = parsed.data.id
     ? await supabase
