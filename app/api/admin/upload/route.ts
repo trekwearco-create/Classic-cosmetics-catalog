@@ -65,7 +65,7 @@ export async function POST(request: Request): Promise<NextResponse> {
     return NextResponse.json({ error: "Bad request" }, { status: 400 });
   }
 
-  const purpose = z.enum(["product", "shade", "category"]).safeParse(
+  const purpose = z.enum(["product", "shade", "category", "banner"]).safeParse(
     form.get("purpose") ?? "product",
   );
   if (!purpose.success) {
@@ -73,7 +73,7 @@ export async function POST(request: Request): Promise<NextResponse> {
   }
 
   const productId =
-    purpose.data === "category"
+    purpose.data === "category" || purpose.data === "banner"
       ? null
       : z.string().uuid().safeParse(form.get("productId"));
   if (productId && !productId.success) {
@@ -149,7 +149,9 @@ export async function POST(request: Request): Promise<NextResponse> {
   const path =
     purpose.data === "category"
       ? `categories/${crypto.randomUUID()}.webp`
-      : `products/${productId?.data}/${purpose.data === "shade" ? "shades/" : ""}${crypto.randomUUID()}.webp`;
+      : purpose.data === "banner"
+        ? `banners/${crypto.randomUUID()}.webp`
+        : `products/${productId?.data}/${purpose.data === "shade" ? "shades/" : ""}${crypto.randomUUID()}.webp`;
   const { error: uploadError } = await supabase.storage
     .from("product-images")
     .upload(path, out, {

@@ -4,14 +4,14 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
-import { env } from "@/lib/env";
+import { validateSupabaseEnv } from "@/lib/env";
 
 let publicClient: SupabaseClient | null = null;
 
 export const supabasePublic = (): SupabaseClient => {
   if (!publicClient) {
-    const e = env();
-    publicClient = createClient(e.SUPABASE_URL, e.SUPABASE_ANON_KEY, {
+    const { url, anonKey } = validateSupabaseEnv();
+    publicClient = createClient(url, anonKey, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
   }
@@ -20,8 +20,8 @@ export const supabasePublic = (): SupabaseClient => {
 
 export const supabaseServer = async (): Promise<SupabaseClient> => {
   const store = await cookies();
-  const e = env();
-  return createServerClient(e.SUPABASE_URL, e.SUPABASE_ANON_KEY, {
+  const { url, anonKey } = validateSupabaseEnv();
+  return createServerClient(url, anonKey, {
     cookies: {
       getAll: () => store.getAll(),
       setAll: (list) => {

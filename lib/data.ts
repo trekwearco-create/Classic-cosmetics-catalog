@@ -21,6 +21,10 @@ export type CategoryRow = {
   slug: string;
   image_url: string | null;
   sort_order: number;
+  parent_id?: string | null;
+  show_in_menu?: boolean;
+  is_active?: boolean;
+  description?: string | null;
 };
 
 export type ProductCardRow = {
@@ -31,21 +35,90 @@ export type ProductCardRow = {
   category_name: string;
   cover_url: string | null;
   shade_colors: string[];
+  price: number | null;
+  discount_price: number | null;
 };
+
+export type CategoryTreeNode = {
+  id: string;
+  name: string;
+  slug: string;
+  image_url: string | null;
+  sort_order: number;
+  parent_id: string | null;
+  show_in_menu: boolean;
+  is_active: boolean;
+  children: CategoryTreeNode[];
+};
+
+export type HomeSectionRow = {
+  key: string;
+  title: string;
+  type: string;
+  bg_color: string | null;
+  is_visible: boolean;
+  sort_order: number;
+};
+
+export type BannerRow = {
+  id: string;
+  section_key: string;
+  image_url_mobile: string | null;
+  image_url_desktop: string | null;
+  link_url: string | null;
+  title: string | null;
+  alt: string | null;
+  extra_text: string | null;
+  sort_order: number;
+  is_active: boolean;
+};
+
+export type HomeSectionWithBanners = HomeSectionRow & {
+  banners: BannerRow[];
+};
+
+export type MenuLinkRow = {
+  id: string;
+  parent_id: string | null;
+  title: string;
+  url: string;
+  sort_order: number;
+  is_active: boolean;
+  children?: MenuLinkRow[];
+};
+
+export const PUBLIC_BANNERS_TAG = "public-banners";
 
 async function loadCategories(): Promise<CategoryRow[]> {
   try {
     const supabase = supabasePublic();
-    const { data, error } = await supabase
+    // Try full schema first
+    const fullRes = await supabase
+      .from("categories")
+      .select("id, name, slug, image_url, sort_order, parent_id, show_in_menu, is_active, description")
+      .order("sort_order")
+      .order("name");
+    if (!fullRes.error && fullRes.data) {
+      return fullRes.data as CategoryRow[];
+    }
+
+    // Fallback if migration 006 not applied yet
+    const fallbackRes = await supabase
       .from("categories")
       .select("id, name, slug, image_url, sort_order")
       .order("sort_order")
       .order("name");
-    if (error) {
-      log.warn("public categories query failed", { code: error.code });
+    if (fallbackRes.error) {
+      log.warn("public categories query failed", { code: fallbackRes.error.code });
       return [];
     }
-    return (data ?? []) as CategoryRow[];
+    return (fallbackRes.data ?? []).map((c) => ({
+      ...c,
+      parent_id: null,
+      show_in_menu: true,
+      is_active: true,
+      description: null,
+    })) as CategoryRow[];
   } catch {
     log.warn("public categories query failed");
     return [];
@@ -60,6 +133,133 @@ const cachedCategories = unstable_cache(loadCategories, ["public-categories"], {
 export async function listCategories(): Promise<CategoryRow[]> {
   return cachedCategories();
 }
+
+export function buildCategoryTree(flat: CategoryRow[]): CategoryTreeNode[] {
+  const activeList = flat.filter((c) => c.is_active !== false);
+  const byId = new Map<string, CategoryTreeNode>();
+  const roots: CategoryTreeNode[] = [];
+
+  for (const item of activeList) {
+    byId.set(item.id, {
+      id: item.id,
+      name: item.name,
+      slug: item.slug,
+      image_url: item.image_url,
+      sort_order: item.sort_order,
+      parent_id: item.parent_id ?? null,
+      show_in_menu: item.show_in_menu !== false,
+      is_active: item.is_active !== false,
+      children: [],
+    });
+  }
+
+  for (const item of activeList) {
+    const node = byId.get(item.id)!;
+    if (item.parent_id && byId.has(item.parent_id)) {
+      byId.get(item.parent_id)!.children.push(node);
+    } else {
+      roots.push(node);
+    }
+  }
+
+  const sortNodes = (nodes: CategoryTreeNode[]) => {
+    nodes.sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name));
+    for (const n of nodes) {
+      if (n.children.length > 0) sortNodes(n.children);
+    }
+  };
+  sortNodes(roots);
+  return roots;
+}
+
+export async function listCategoryTree(): Promise<CategoryTreeNode[]> {
+  const flat = await listCategories();
+  return buildCategoryTree(flat);
+}
+
+async function loadHomeSectionsWithBanners(): Promise<HomeSectionWithBanners[]> {
+  try {
+    const supabase = supabasePublic();
+    const [sectionsRes, bannersRes] = await Promise.all([
+      supabase
+        .from("home_sections")
+        .select("key, title, type, bg_color, is_visible, sort_order")
+        .eq("is_visible", true)
+        .order("sort_order"),
+      supabase
+        .from("banners")
+        .select("id, section_key, image_url_mobile, image_url_desktop, link_url, title, alt, extra_text, sort_order, is_active")
+        .eq("is_active", true)
+        .order("sort_order"),
+    ]);
+
+    if (sectionsRes.error || bannersRes.error) {
+      return [];
+    }
+
+    const bannersBySection = new Map<string, BannerRow[]>();
+    for (const b of (bannersRes.data ?? []) as BannerRow[]) {
+      const list = bannersBySection.get(b.section_key) ?? [];
+      list.push(b);
+      bannersBySection.set(b.section_key, list);
+    }
+
+    const sections = (sectionsRes.data ?? []) as HomeSectionRow[];
+    return sections.map((s) => ({
+      ...s,
+      banners: bannersBySection.get(s.key) ?? [],
+    }));
+  } catch {
+    return [];
+  }
+}
+
+export const getHomeSectionsWithBanners = unstable_cache(
+  loadHomeSectionsWithBanners,
+  ["public-home-sections"],
+  {
+    revalidate: 1800,
+    tags: [PUBLIC_BANNERS_TAG],
+  },
+);
+
+async function loadMenuLinks(): Promise<MenuLinkRow[]> {
+  try {
+    const supabase = supabasePublic();
+    const { data, error } = await supabase
+      .from("menu_links")
+      .select("id, parent_id, title, url, sort_order, is_active")
+      .eq("is_active", true)
+      .order("sort_order");
+    if (error || !data) return [];
+
+    const byId = new Map<string, MenuLinkRow>();
+    const roots: MenuLinkRow[] = [];
+    for (const item of data as MenuLinkRow[]) {
+      byId.set(item.id, { ...item, children: [] });
+    }
+    for (const item of data as MenuLinkRow[]) {
+      const node = byId.get(item.id)!;
+      if (item.parent_id && byId.has(item.parent_id)) {
+        byId.get(item.parent_id)!.children!.push(node);
+      } else {
+        roots.push(node);
+      }
+    }
+    return roots;
+  } catch {
+    return [];
+  }
+}
+
+export const getMenuLinks = unstable_cache(
+  loadMenuLinks,
+  ["public-menu-links"],
+  {
+    revalidate: 1800,
+    tags: [PUBLIC_BANNERS_TAG],
+  },
+);
 
 type SearchArgs = {
   q: string | null;
@@ -94,6 +294,8 @@ async function loadProductCards({
       name: string;
       category_id: string;
       in_stock: boolean;
+      price: number | null;
+      discount_price: number | null;
     }>;
 
     if (rows.length === 0) return [];
@@ -158,6 +360,8 @@ async function loadProductCards({
       cover_url:
         coverByProduct.get(r.id) ?? firstByProduct.get(r.id) ?? null,
       shade_colors: shadesByProduct.get(r.id) ?? [],
+      price: r.price ?? null,
+      discount_price: r.discount_price ?? null,
     }));
   } catch {
     log.warn("public product search failed");
@@ -176,11 +380,28 @@ export async function searchProductCards(args: SearchArgs): Promise<ProductCardR
   return cachedProductCards(args.q, args.category, args.page);
 }
 
+export async function getBestSellers(limit = 8): Promise<ProductCardRow[]> {
+  const cards = await searchProductCards({ q: null, category: null, page: 1 });
+  const sorted = [...cards].sort((a, b) => {
+    const aDiscount = a.price && a.discount_price ? (a.price - a.discount_price) / a.price : 0;
+    const bDiscount = b.price && b.discount_price ? (b.price - b.discount_price) / b.price : 0;
+    return bDiscount - aDiscount;
+  });
+  return sorted.slice(0, limit);
+}
+
+export async function getLatestDrop(limit = 8): Promise<ProductCardRow[]> {
+  const cards = await searchProductCards({ q: null, category: null, page: 1 });
+  return cards.slice(0, limit);
+}
+
 export type ProductDetail = {
   id: string;
   slug: string;
   name: string;
   description: string | null;
+  price: number | null;
+  discount_price: number | null;
   in_stock: boolean;
   category_name: string;
   category_slug: string;
@@ -204,7 +425,7 @@ async function loadProductBySlug(
     const { data, error } = await supabase
       .from("products")
       .select(
-        "id, slug, name, description, in_stock, category_id, categories(name, slug)",
+        "id, slug, name, description, price, discount_price, in_stock, category_id, categories(name, slug)",
       )
       .eq("slug", slug)
       .eq("is_visible", true)
@@ -216,6 +437,8 @@ async function loadProductBySlug(
       slug: string;
       name: string;
       description: string | null;
+      price: number | null;
+      discount_price: number | null;
       in_stock: boolean;
       categories: { name: string; slug: string } | null;
     };
@@ -253,6 +476,8 @@ async function loadProductBySlug(
       slug: product.slug,
       name: product.name,
       description: product.description,
+      price: product.price ?? null,
+      discount_price: product.discount_price ?? null,
       in_stock: product.in_stock,
       category_name: product.categories?.name ?? "",
       category_slug: product.categories?.slug ?? "",

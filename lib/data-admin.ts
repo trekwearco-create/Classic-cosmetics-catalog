@@ -9,34 +9,165 @@ export type AdminCategory = {
   image_url: string | null;
   sort_order: number;
   product_count: number;
+  parent_id?: string | null;
+  show_in_menu?: boolean;
+  is_active?: boolean;
+  description?: string | null;
+  children_count?: number;
+  full_path?: string;
+};
+
+export type AdminHomeSection = {
+  key: string;
+  title: string;
+  type: string;
+  bg_color: string | null;
+  is_visible: boolean;
+  sort_order: number;
+  banner_count?: number;
+};
+
+export type AdminBanner = {
+  id: string;
+  section_key: string;
+  image_url_mobile: string | null;
+  image_url_desktop: string | null;
+  link_url: string | null;
+  title: string | null;
+  alt: string | null;
+  extra_text: string | null;
+  sort_order: number;
+  is_active: boolean;
+  starts_at: string | null;
+  ends_at: string | null;
+  created_at: string;
 };
 
 export async function listCategoriesAdmin(): Promise<AdminCategory[]> {
   const supabase = await supabaseServer();
-  const { data, error } = await supabase
+  
+  // Try with full schema first
+  let rows: Array<{
+    id: string;
+    name: string;
+    slug: string;
+    image_url: string | null;
+    sort_order: number;
+    parent_id?: string | null;
+    show_in_menu?: boolean;
+    is_active?: boolean;
+    description?: string | null;
+    products: { count: number }[] | null;
+  }> = [];
+
+  const fullRes = await supabase
     .from("categories")
-    .select("id, name, slug, image_url, sort_order, products(count)")
+    .select("id, name, slug, image_url, sort_order, parent_id, show_in_menu, is_active, description, products(count)")
     .order("sort_order")
     .order("name");
-  if (error) throw new Error(error.message);
+
+  if (!fullRes.error && fullRes.data) {
+    rows = fullRes.data as unknown as typeof rows;
+  } else {
+    // Fallback if migration not run yet
+    const fallbackRes = await supabase
+      .from("categories")
+      .select("id, name, slug, image_url, sort_order, products(count)")
+      .order("sort_order")
+      .order("name");
+    if (fallbackRes.error) throw new Error(fallbackRes.error.message);
+    rows = (fallbackRes.data ?? []).map((r) => ({
+      ...r,
+      parent_id: null,
+      show_in_menu: true,
+      is_active: true,
+      description: null,
+    })) as unknown as typeof rows;
+  }
+
+  // Count children per parent
+  const childrenCountByParent = new Map<string, number>();
+  for (const r of rows) {
+    if (r.parent_id) {
+      childrenCountByParent.set(
+        r.parent_id,
+        (childrenCountByParent.get(r.parent_id) ?? 0) + 1,
+      );
+    }
+  }
+
+  // Build name by id for full path
+  const nameById = new Map<string, { name: string; parent_id?: string | null }>();
+  for (const r of rows) {
+    nameById.set(r.id, { name: r.name, parent_id: r.parent_id });
+  }
+
+  const getFullPath = (id: string): string => {
+    const item = nameById.get(id);
+    if (!item) return "";
+    if (item.parent_id && nameById.has(item.parent_id)) {
+      return `${getFullPath(item.parent_id)} > ${item.name}`;
+    }
+    return item.name;
+  };
+
+  return rows.map((r) => ({
+    id: r.id,
+    name: r.name,
+    slug: r.slug,
+    image_url: r.image_url,
+    sort_order: r.sort_order,
+    parent_id: r.parent_id ?? null,
+    show_in_menu: r.show_in_menu !== false,
+    is_active: r.is_active !== false,
+    description: r.description ?? null,
+    product_count: r.products?.[0]?.count ?? 0,
+    children_count: childrenCountByParent.get(r.id) ?? 0,
+    full_path: getFullPath(r.id),
+  }));
+}
+
+export async function listHomeSectionsAdmin(): Promise<AdminHomeSection[]> {
+  const supabase = await supabaseServer();
+  const { data, error } = await supabase
+    .from("home_sections")
+    .select("key, title, type, bg_color, is_visible, sort_order, banners(count)")
+    .order("sort_order");
+  if (error) return [];
   return (data ?? []).map((row) => {
     const r = row as unknown as {
-      id: string;
-      name: string;
-      slug: string;
-      image_url: string | null;
+      key: string;
+      title: string;
+      type: string;
+      bg_color: string | null;
+      is_visible: boolean;
       sort_order: number;
-      products: { count: number }[] | null;
+      banners: { count: number }[] | null;
     };
     return {
-      id: r.id,
-      name: r.name,
-      slug: r.slug,
-      image_url: r.image_url,
+      key: r.key,
+      title: r.title,
+      type: r.type,
+      bg_color: r.bg_color,
+      is_visible: r.is_visible,
       sort_order: r.sort_order,
-      product_count: r.products?.[0]?.count ?? 0,
+      banner_count: r.banners?.[0]?.count ?? 0,
     };
   });
+}
+
+export async function listBannersAdmin(sectionKey?: string): Promise<AdminBanner[]> {
+  const supabase = await supabaseServer();
+  let query = supabase
+    .from("banners")
+    .select("id, section_key, image_url_mobile, image_url_desktop, link_url, title, alt, extra_text, sort_order, is_active, starts_at, ends_at, created_at")
+    .order("sort_order");
+  if (sectionKey) {
+    query = query.eq("section_key", sectionKey);
+  }
+  const { data, error } = await query;
+  if (error) return [];
+  return (data ?? []) as AdminBanner[];
 }
 
 export type AdminProductRow = {
@@ -103,6 +234,8 @@ export type AdminProduct = {
   name: string;
   slug: string;
   description: string | null;
+  price: number | null;
+  discount_price: number | null;
   is_visible: boolean;
   in_stock: boolean;
   category_id: string;
@@ -125,7 +258,7 @@ export async function getProductAdmin(
   const { data, error } = await supabase
     .from("products")
     .select(
-      "id, name, slug, description, is_visible, in_stock, category_id",
+      "id, name, slug, description, price, discount_price, is_visible, in_stock, category_id",
     )
     .eq("id", id)
     .maybeSingle();
@@ -136,6 +269,8 @@ export async function getProductAdmin(
     name: string;
     slug: string;
     description: string | null;
+    price: number | null;
+    discount_price: number | null;
     is_visible: boolean;
     in_stock: boolean;
     category_id: string;
@@ -172,6 +307,8 @@ export async function getProductAdmin(
     name: product.name,
     slug: product.slug,
     description: product.description,
+    price: product.price ?? null,
+    discount_price: product.discount_price ?? null,
     is_visible: product.is_visible,
     in_stock: product.in_stock,
     category_id: product.category_id,

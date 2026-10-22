@@ -18,6 +18,8 @@ export type ProductFormInitial = {
   name: string;
   slug: string;
   description: string;
+  price?: number | null;
+  discount_price?: number | null;
   is_visible: boolean;
   in_stock: boolean;
   category_id: string;
@@ -42,6 +44,14 @@ export default function ProductForm({
   const [name, setName] = useState(initial.name);
   const [categoryId, setCategoryId] = useState(initial.category_id);
   const [description, setDescription] = useState(initial.description);
+  const [price, setPrice] = useState<string>(
+    initial.price !== null && initial.price !== undefined ? String(initial.price) : ""
+  );
+  const [discountPrice, setDiscountPrice] = useState<string>(
+    initial.discount_price !== null && initial.discount_price !== undefined
+      ? String(initial.discount_price)
+      : ""
+  );
   const [isVisible, setIsVisible] = useState(initial.is_visible);
   const [inStock, setInStock] = useState(initial.in_stock);
   const [images, setImages] = useState<UploadItem[]>(initial.images);
@@ -54,6 +64,8 @@ export default function ProductForm({
         name: initial.name,
         categoryId: initial.category_id,
         description: initial.description,
+        price: initial.price,
+        discount_price: initial.discount_price,
         is_visible: initial.is_visible,
         in_stock: initial.in_stock,
         images: initial.images.map((i) => i.path),
@@ -68,12 +80,14 @@ export default function ProductForm({
         name,
         categoryId,
         description,
+        price,
+        discountPrice,
         is_visible: isVisible,
         in_stock: inStock,
         images: images.filter((i) => i.progress === "done").map((i) => i.path),
         shades,
       }),
-    [name, categoryId, description, isVisible, inStock, images, shades],
+    [name, categoryId, description, price, discountPrice, isVisible, inStock, images, shades],
   );
 
   const dirty = currentSnapshot !== initialSnapshot;
@@ -134,6 +148,8 @@ export default function ProductForm({
         name: name.trim(),
         category_id: categoryId,
         description: description.trim() === "" ? null : description.trim(),
+        price: price.trim() === "" ? null : Number(price),
+        discount_price: discountPrice.trim() === "" ? null : Number(discountPrice),
         is_visible: isVisible,
         in_stock: inStock,
       }),
@@ -248,6 +264,33 @@ export default function ProductForm({
             </div>
           </div>
         </div>
+        <div className="mt-4 grid gap-4 md:grid-cols-2">
+          <label className="flex flex-col gap-1 text-sm font-semibold">
+            Price (PKR)
+            <input
+              type="number"
+              step="any"
+              min="0"
+              placeholder="e.g. 1500"
+              className="field"
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-sm font-semibold">
+            Discount Price (PKR)
+            <input
+              type="number"
+              step="any"
+              min="0"
+              placeholder="e.g. 1200 (optional sale price)"
+              className="field"
+              value={discountPrice}
+              onChange={(e) => setDiscountPrice(e.target.value)}
+            />
+          </label>
+        </div>
+
         <label className="mt-4 flex flex-col gap-1 text-sm font-semibold">
           Description
           <textarea

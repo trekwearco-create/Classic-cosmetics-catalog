@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { supabasePublic } from "@/lib/supabase/server";
+import { supabaseServer } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
   title: "Dashboard",
@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 };
 
 export default async function AdminDashboardPage() {
-  const supabase = supabasePublic();
+  const supabase = await supabaseServer();
 
   const [productsRes, categoriesRes, hiddenRes] = await Promise.all([
     supabase.from("products").select("id", { count: "exact", head: true }),

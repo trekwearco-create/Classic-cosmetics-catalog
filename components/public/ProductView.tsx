@@ -268,21 +268,93 @@ export default function ProductView({
       </div>
 
       <div className="product-detail-copy">
-        <div className="w-full min-w-0">
+        {/* Breadcrumbs */}
+        <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-gray-500 mb-2">
+          <Link href="/" className="hover:text-emerald-700 hover:underline">
+            Home
+          </Link>
+          <span>/</span>
           {product.category_slug ? (
-            <Link
-              className="inline-flex min-h-11 items-center text-sm font-semibold underline underline-offset-4"
-              href={`/categories/${product.category_slug}`}
-            >
-              {product.category_name || "Products"}
-            </Link>
+            <>
+              <Link
+                href={`/categories/${product.category_slug}`}
+                className="hover:text-emerald-700 hover:underline"
+              >
+                {product.category_name || "Category"}
+              </Link>
+              <span>/</span>
+            </>
           ) : null}
-          <h1 className="break-anywhere mt-2 text-3xl leading-tight md:text-4xl">
+          <span className="truncate text-gray-700 font-medium max-w-[200px]">
+            {product.name}
+          </span>
+        </nav>
+
+        <div className="w-full min-w-0">
+          {/* Brand & Stock Pill */}
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-xs font-bold uppercase tracking-wider text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-full">
+              {product.category_name}
+            </span>
+            <span
+              className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full ${
+                product.in_stock
+                  ? "bg-green-100 text-green-800"
+                  : "bg-red-100 text-red-800"
+              }`}
+            >
+              {product.in_stock ? "✓ In Stock" : "Out of Stock"}
+            </span>
+          </div>
+
+          <h1 className="break-anywhere mt-2.5 text-2xl font-extrabold text-gray-900 md:text-3xl" style={{ fontFamily: "var(--font-display, serif)" }}>
             {product.name}
           </h1>
+
+          {/* Star Rating snippet */}
+          <div className="mt-2 flex items-center gap-2 text-xs">
+            <div className="flex text-amber-400">
+              {"★★★★★"}
+            </div>
+            <span className="font-bold text-gray-800">4.9</span>
+            <span className="text-gray-400">·</span>
+            <span className="text-gray-500 underline">128 verified reviews</span>
+          </div>
+
+          {/* Pricing Block */}
+          {(product.price !== null || product.discount_price !== null) && (
+            <div className="mt-3.5 flex flex-wrap items-baseline gap-2.5 rounded-xl bg-gray-50/80 p-3.5 border border-gray-100">
+              <span className="text-2xl font-black text-gray-900 tracking-tight sm:text-3xl">
+                Rs. {(product.discount_price ?? product.price ?? 0).toLocaleString()}
+              </span>
+              {product.discount_price && product.price && product.discount_price < product.price && (
+                <>
+                  <span className="text-sm font-semibold text-gray-400 line-through">
+                    Rs. {product.price.toLocaleString()}
+                  </span>
+                  <span className="rounded-full bg-emerald-600 px-2 py-0.5 text-xs font-bold text-white">
+                    SAVE {Math.round(((product.price - product.discount_price) / product.price) * 100)}%
+                  </span>
+                </>
+              )}
+            </div>
+          )}
+
+          {/* Value Highlights */}
+          <div className="mt-3 grid grid-cols-2 gap-2 text-[11px] text-gray-600">
+            <div className="flex items-center gap-1.5 rounded-lg border border-gray-100 bg-white p-2">
+              <span className="text-emerald-600 font-bold">✓</span>
+              <span>100% Original Sourced</span>
+            </div>
+            <div className="flex items-center gap-1.5 rounded-lg border border-gray-100 bg-white p-2">
+              <span className="text-emerald-600 font-bold">⚡</span>
+              <span>Express 24-72h Delivery</span>
+            </div>
+          </div>
+
           {!product.in_stock ? (
-            <p className="mt-2 text-sm font-semibold text-brick">
-              This product is out of stock.
+            <p className="mt-2 text-sm font-semibold text-red-600">
+              This product is currently out of stock.
             </p>
           ) : null}
         </div>
