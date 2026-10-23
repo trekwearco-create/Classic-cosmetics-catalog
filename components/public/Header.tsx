@@ -773,11 +773,11 @@ export default function Header({
       >
         {/* Top Header Bar */}
         <div className="wrap site-header-inner">
-          {/* Left: Mobile hamburger (mobile only) */}
-          <div className="header-start flex items-center">
+          {/* Left: Mobile hamburger (mobile only, hidden on desktop) */}
+          <div className="header-start flex items-center md:!hidden">
             <button
               type="button"
-              className="hamburger-btn md:hidden"
+              className="hamburger-btn md:!hidden"
               aria-label="Open navigation menu"
               aria-expanded={drawerOpen}
               onClick={openDrawer}

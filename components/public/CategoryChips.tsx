@@ -9,40 +9,27 @@ export default function CategoryChips({
   categories: CategoryRow[];
   active: string | null;
 }) {
-  const buildHref = (slug: string | null) =>
-    slug ? `/categories/${slug}` : "/categories";
-
-  const rootCategories = categories.filter((c) => !c.parent_id);
-  const displayCategories = rootCategories.length > 0 ? rootCategories : categories;
+  if (!categories || categories.length === 0) return null;
 
   return (
-    <div className="overflow-x-auto" style={{ scrollbarWidth: "none" }}>
+    <div className="overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
       <div className="flex flex-nowrap gap-2 md:flex-wrap">
-        <Link
-          href={buildHref(null)}
-          className="flex min-h-11 flex-none items-center rounded-full border px-4 text-sm font-semibold"
-          style={
-            !active
-              ? { background: "var(--ink)", color: "var(--white)", borderColor: "var(--ink)" }
-              : { background: "var(--white)", borderColor: "var(--line)" }
-          }
-        >
-          All
-        </Link>
-        {displayCategories.map((c) => (
-          <Link
-            key={c.id}
-            href={buildHref(c.slug)}
-            className="flex min-h-11 flex-none items-center rounded-full border px-4 text-sm font-semibold"
-            style={
-              active === c.slug
-                ? { background: "var(--ink)", color: "var(--white)", borderColor: "var(--ink)" }
-                : { background: "var(--white)", borderColor: "var(--line)" }
-            }
-          >
-            {c.name}
-          </Link>
-        ))}
+        {categories.map((c) => {
+          const isCurrent = active === c.slug;
+          return (
+            <Link
+              key={c.id}
+              href={`/categories/${c.slug}`}
+              className={`flex min-h-9 flex-none items-center rounded-full border px-4 py-1.5 text-xs font-bold transition-colors ${
+                isCurrent
+                  ? "border-[#0C3B25] bg-[#0C3B25] text-white shadow-xs"
+                  : "border-gray-200 bg-white text-gray-700 hover:border-emerald-600 hover:text-emerald-700 shadow-2xs"
+              }`}
+            >
+              {c.name}
+            </Link>
+          );
+        })}
       </div>
     </div>
   );
