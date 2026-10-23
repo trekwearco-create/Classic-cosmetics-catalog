@@ -10,7 +10,9 @@ export const metadata: Metadata = {
 };
 
 export default async function CategoriesPage() {
-  const categories = await listCategories();
+  const allCategories = await listCategories();
+  const rootCategories = allCategories.filter((c) => !c.parent_id);
+  const categories = rootCategories.length > 0 ? rootCategories : allCategories;
 
   return (
     <main className="mt-4 pb-14 sm:mt-6">

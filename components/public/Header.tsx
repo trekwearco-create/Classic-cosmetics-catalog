@@ -72,17 +72,14 @@ function MobileDrawer({
   open,
   onClose,
   tree,
-  menuLinks,
 }: {
   open: boolean;
   onClose: () => void;
   tree: CategoryTreeNode[];
-  menuLinks?: MenuLinkRow[];
 }) {
   const drawerRef = useRef<HTMLDivElement>(null);
   const [expandedL1, setExpandedL1] = useState<string | null>(null);
   const [expandedL2, setExpandedL2] = useState<string | null>(null);
-  const [supportOpen, setSupportOpen] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -134,7 +131,7 @@ function MobileDrawer({
         </div>
 
         <nav className="drawer-body" aria-label="Mobile navigation">
-          {tree.map((l1) => {
+          {tree.filter((c) => !c.parent_id).map((l1) => {
             const hasL2 = l1.children && l1.children.length > 0;
             const isL1Open = expandedL1 === l1.id;
 
@@ -143,7 +140,7 @@ function MobileDrawer({
                 <div className="flex items-center justify-between">
                   <Link
                     href={`/categories/${l1.slug}`}
-                    className="flex-1 py-3 px-5 text-sm font-bold text-gray-900 hover:text-emerald-700"
+                    className="flex-1 py-3.5 px-5 text-sm font-bold text-gray-900 hover:text-emerald-700"
                     onClick={onClose}
                   >
                     {l1.name}
@@ -152,7 +149,7 @@ function MobileDrawer({
                     <button
                       type="button"
                       onClick={() => setExpandedL1(isL1Open ? null : l1.id)}
-                      className="p-3 text-gray-400 hover:text-gray-700"
+                      className="p-3.5 text-gray-400 hover:text-gray-700"
                       aria-label={`Toggle ${l1.name} subcategories`}
                     >
                       <span className={`inline-block transition-transform duration-150 ${isL1Open ? "rotate-90" : ""}`}>
@@ -179,11 +176,11 @@ function MobileDrawer({
                       const isL2Open = expandedL2 === l2.id;
 
                       return (
-                        <div key={l2.id} className="rounded-lg bg-white/60 p-1">
+                        <div key={l2.id} className="rounded-lg bg-white/80 p-1 border border-gray-100">
                           <div className="flex items-center justify-between">
                             <Link
                               href={`/categories/${l2.slug}`}
-                              className="flex-1 py-1 px-2 text-xs font-semibold text-gray-800 hover:text-emerald-700"
+                              className="flex-1 py-1.5 px-2 text-xs font-semibold text-gray-800 hover:text-emerald-700"
                               onClick={onClose}
                             >
                               {l2.name}
@@ -192,7 +189,8 @@ function MobileDrawer({
                               <button
                                 type="button"
                                 onClick={() => setExpandedL2(isL2Open ? null : l2.id)}
-                                className="p-1 text-gray-400"
+                                className="p-1.5 text-gray-400 hover:text-gray-700"
+                                aria-label={`Toggle ${l2.name} items`}
                               >
                                 <span className={`inline-block transition-transform duration-150 ${isL2Open ? "rotate-90" : ""}`}>
                                   <IconChevronRight />
@@ -224,92 +222,6 @@ function MobileDrawer({
               </div>
             );
           })}
-
-          {/* Non-category navigation links */}
-          <div className="border-t border-gray-200 mt-2 pt-2 bg-gray-50/50">
-            {menuLinks && menuLinks.length > 0 ? (
-              menuLinks.map((link) => (
-                <div key={link.id}>
-                  {link.children && link.children.length > 0 ? (
-                    <div className="px-5 py-2">
-                      <p className="text-sm font-semibold text-gray-700 py-1">{link.title}</p>
-                      <div className="mt-1 space-y-1 pl-3 border-l border-gray-200">
-                        {link.children.map((child) => (
-                          <Link
-                            key={child.id}
-                            href={child.url}
-                            className="block text-xs text-gray-600 hover:text-emerald-700 py-1"
-                            onClick={onClose}
-                          >
-                            {child.title}
-                          </Link>
-                        ))}
-                      </div>
-                    </div>
-                  ) : (
-                    <Link
-                      href={link.url}
-                      className="drawer-nav-item !border-none !min-h-[44px] text-sm font-semibold"
-                      onClick={onClose}
-                    >
-                      <span>{link.title}</span>
-                      <IconChevronRight />
-                    </Link>
-                  )}
-                </div>
-              ))
-            ) : (
-              <>
-                <Link
-                  href="/brands"
-                  className="drawer-nav-item !border-none !min-h-[44px] text-sm font-semibold"
-                  onClick={onClose}
-                >
-                  <span>Brands</span>
-                  <IconChevronRight />
-                </Link>
-
-                {/* Support section */}
-                <div className="px-5 py-2">
-                  <button
-                    type="button"
-                    onClick={() => setSupportOpen(!supportOpen)}
-                    className="flex w-full items-center justify-between text-sm font-semibold text-gray-700 py-1"
-                  >
-                    <span>Support & Help</span>
-                    <span className={`transition-transform duration-150 ${supportOpen ? "rotate-90" : ""}`}>
-                      <IconChevronRight />
-                    </span>
-                  </button>
-                  {supportOpen && (
-                    <div className="mt-2 space-y-1.5 pl-3 border-l border-gray-200">
-                      <Link href="/support/about-us" className="block text-xs text-gray-600 hover:text-emerald-700 py-1" onClick={onClose}>About Us</Link>
-                      <Link href="/support/contact-us" className="block text-xs text-gray-600 hover:text-emerald-700 py-1" onClick={onClose}>Contact Us</Link>
-                      <Link href="/support/faqs" className="block text-xs text-gray-600 hover:text-emerald-700 py-1" onClick={onClose}>FAQs</Link>
-                      <Link href="/support/return-and-exchange" className="block text-xs text-gray-600 hover:text-emerald-700 py-1" onClick={onClose}>Return & Exchange</Link>
-                    </div>
-                  )}
-                </div>
-
-                <Link
-                  href="/reviews"
-                  className="drawer-nav-item !border-none !min-h-[44px] text-sm font-semibold"
-                  onClick={onClose}
-                >
-                  <span>Reviews</span>
-                  <IconChevronRight />
-                </Link>
-                <Link
-                  href="/track-order"
-                  className="drawer-nav-item !border-none !min-h-[44px] text-sm font-semibold"
-                  onClick={onClose}
-                >
-                  <span>Track Your Order</span>
-                  <IconChevronRight />
-                </Link>
-              </>
-            )}
-          </div>
         </nav>
       </div>
     </>
@@ -319,7 +231,7 @@ function MobileDrawer({
 /* ── Main Header Component ─────────────────────────────────── */
 export default function Header({
   categoryTree = [],
-  menuLinks = [],
+  menuLinks: _menuLinks = [],
 }: {
   categoryTree?: CategoryTreeNode[];
   menuLinks?: MenuLinkRow[];
@@ -368,7 +280,7 @@ export default function Header({
           <div className="header-start flex items-center">
             <button
               type="button"
-              className="hamburger-btn lg:hidden"
+              className="hamburger-btn md:hidden"
               aria-label="Open navigation menu"
               aria-expanded={drawerOpen}
               onClick={openDrawer}
@@ -376,9 +288,9 @@ export default function Header({
               <IconMenu />
             </button>
 
-            {/* Desktop Navigation */}
-            <nav className="desktop-nav hidden lg:flex items-center gap-1" aria-label="Main navigation">
-              {tree.slice(0, 7).map((item) => {
+            {/* Desktop Navigation: ONLY Root categories */}
+            <nav className="desktop-nav hidden md:flex items-center gap-1" aria-label="Main navigation">
+              {tree.filter((c) => !c.parent_id).slice(0, 7).map((item) => {
                 const hasChildren = item.children && item.children.length > 0;
                 const isExpanded = activeMegaCategory?.id === item.id;
 
@@ -403,10 +315,6 @@ export default function Header({
                   </div>
                 );
               })}
-
-              <Link href="/brands" className="desktop-nav-link text-[13px] font-bold">
-                Brands
-              </Link>
             </nav>
           </div>
 
@@ -506,7 +414,6 @@ export default function Header({
         open={drawerOpen}
         onClose={closeDrawer}
         tree={tree}
-        menuLinks={menuLinks}
       />
     </>
   );

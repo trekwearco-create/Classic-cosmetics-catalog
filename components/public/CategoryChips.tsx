@@ -12,6 +12,9 @@ export default function CategoryChips({
   const buildHref = (slug: string | null) =>
     slug ? `/categories/${slug}` : "/categories";
 
+  const rootCategories = categories.filter((c) => !c.parent_id);
+  const displayCategories = rootCategories.length > 0 ? rootCategories : categories;
+
   return (
     <div className="overflow-x-auto" style={{ scrollbarWidth: "none" }}>
       <div className="flex flex-nowrap gap-2 md:flex-wrap">
@@ -26,7 +29,7 @@ export default function CategoryChips({
         >
           All
         </Link>
-        {categories.map((c) => (
+        {displayCategories.map((c) => (
           <Link
             key={c.id}
             href={buildHref(c.slug)}

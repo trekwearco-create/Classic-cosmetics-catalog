@@ -65,10 +65,12 @@ export default function AddToCartButton({
   const { addItem, storageError } = useCart();
   const [dialogMessage, setDialogMessage] = useState("");
   const [added, setAdded] = useState(false);
+  const [loading, setLoading] = useState(false);
   const needsShade = requiresShade && shade === null;
   const ariaDisabled = !inStock || !available || needsShade;
 
   function handleClick() {
+    if (loading) return;
     if (!inStock) {
       setDialogMessage(
         "Sorry, this product is currently out of stock and cannot be ordered.",
@@ -85,14 +87,20 @@ export default function AddToCartButton({
       onMissingShade?.();
       return;
     }
-    const ok = addItem(
-      { ...product, photoUrl: product.photoUrl ?? null, shade },
-      inStock,
-      available,
-    );
-    if (ok && iconOnly) {
-      setAdded(true);
-      setTimeout(() => setAdded(false), 1400);
+
+    setLoading(true);
+    try {
+      const ok = addItem(
+        { ...product, photoUrl: product.photoUrl ?? null, shade },
+        inStock,
+        available,
+      );
+      if (ok && iconOnly) {
+        setAdded(true);
+        setTimeout(() => setAdded(false), 1400);
+      }
+    } finally {
+      setTimeout(() => setLoading(false), 1000);
     }
   }
 
@@ -101,16 +109,27 @@ export default function AddToCartButton({
       <>
         <button
           type="button"
-          className="product-card-bag-btn"
+          className="product-card-bag-btn relative overflow-hidden transition-all duration-300"
           aria-label={`Add ${product.name} to cart`}
           aria-disabled={ariaDisabled}
+          disabled={loading}
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
             handleClick();
           }}
         >
-          {added ? <IconCheck /> : <IconBag />}
+          {loading ? (
+            <div className="relative flex h-4 w-4 items-center justify-center">
+              <div className="absolute inset-0 rounded-full border border-emerald-300 animate-[ping_1.0s_cubic-bezier(0,0,0.2,1)_infinite] opacity-60"></div>
+              <div className="h-4 w-4 rounded-full border border-emerald-100"></div>
+              <div className="absolute h-4 w-4 rounded-full border-[1.5px] border-transparent border-t-[#0c3b25] border-r-[#0c3b25] animate-[spin_1.0s_linear_infinite]"></div>
+            </div>
+          ) : added ? (
+            <IconCheck />
+          ) : (
+            <IconBag />
+          )}
         </button>
         <MessageDialog
           open={dialogMessage !== ""}
@@ -126,13 +145,33 @@ export default function AddToCartButton({
     <>
       <button
         type="button"
-        className={`${className} purchase-button${ariaDisabled ? " is-muted" : ""}`}
+        className={`group relative inline-flex items-center justify-center overflow-hidden rounded-full border border-[#0c3b25] px-8 py-3.5 text-xs font-semibold uppercase tracking-[0.22em] transition-all duration-300 ease-out ${
+          loading
+            ? "bg-white text-transparent cursor-not-allowed shadow-none"
+            : ariaDisabled
+            ? "opacity-60 cursor-not-allowed bg-gray-200 text-gray-500 border-gray-300"
+            : "bg-[#0c3b25] text-white hover:bg-white hover:text-[#0c3b25] shadow-sm active:scale-[0.98]"
+        } ${className}`}
         aria-disabled={ariaDisabled}
         onClick={handleClick}
+        disabled={loading}
       >
-        {inStock && available && needsShade
-          ? "Select your shade first"
-          : "Add to cart"}
+        <span className="absolute inset-0 h-full w-full bg-white transition-transform duration-300 ease-out -translate-y-full group-hover:translate-y-0 -z-0"></span>
+        <span className="relative z-10 font-serif transition-colors duration-300">
+          {inStock && available && needsShade
+            ? "Select your shade first"
+            : "Add to cart"}
+        </span>
+        {loading && (
+          <div className="absolute inset-0 z-20 flex items-center justify-center bg-white">
+            <div className="relative flex h-5 w-5 items-center justify-center">
+              <div className="absolute inset-0 rounded-full border border-emerald-300 animate-[ping_1.0s_cubic-bezier(0,0,0.2,1)_infinite] opacity-60"></div>
+              <div className="h-5 w-5 rounded-full border border-emerald-100"></div>
+              <div className="absolute h-5 w-5 rounded-full border-[1.5px] border-transparent border-t-[#0c3b25] border-r-[#0c3b25] animate-[spin_1.0s_linear_infinite]"></div>
+              <div className="h-1 w-1 rounded-full bg-[#0c3b25]"></div>
+            </div>
+          </div>
+        )}
       </button>
       {storageError ? (
         <span className="sr-only" role="alert">{storageError}</span>

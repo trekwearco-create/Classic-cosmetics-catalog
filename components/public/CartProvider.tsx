@@ -6,13 +6,8 @@ import {
   useContext,
   useEffect,
   useMemo,
-  useRef,
   useState,
 } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-
-import CartThumbnail from "@/components/public/CartThumbnail";
 
 export type CartShade = {
   id: string;
@@ -132,17 +127,11 @@ function lineKey(id: string, shadeId: string | null) {
 }
 
 export function CartProvider({ children }: Readonly<{ children: React.ReactNode }>) {
-  const router = useRouter();
   const [items, setItems] = useState<CartItem[]>([]);
   const [ready, setReady] = useState(false);
   const [storageError, setStorageError] = useState<string | null>(null);
   const [invalidData, setInvalidData] = useState(false);
-  const [toast, setToast] = useState<{ item: CartItem; closing: boolean } | null>(
-    null,
-  );
   const [bumpKey, setBumpKey] = useState(0);
-  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const toastCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -180,32 +169,6 @@ export function CartProvider({ children }: Readonly<{ children: React.ReactNode 
     }
   }, [items, ready]);
 
-  const dismissToast = useCallback(() => {
-    if (toastTimer.current) clearTimeout(toastTimer.current);
-    toastTimer.current = null;
-    setToast((current) => (current ? { ...current, closing: true } : null));
-    if (toastCloseTimer.current) clearTimeout(toastCloseTimer.current);
-    toastCloseTimer.current = setTimeout(() => setToast(null), 280);
-  }, []);
-
-  const pauseToast = useCallback(() => {
-    if (toastTimer.current) clearTimeout(toastTimer.current);
-    toastTimer.current = null;
-  }, []);
-
-  const resumeToast = useCallback(() => {
-    pauseToast();
-    toastTimer.current = setTimeout(dismissToast, 10_000);
-  }, [dismissToast, pauseToast]);
-
-  useEffect(
-    () => () => {
-      if (toastTimer.current) clearTimeout(toastTimer.current);
-      if (toastCloseTimer.current) clearTimeout(toastCloseTimer.current);
-    },
-    [],
-  );
-
   const addItem = useCallback((product: CartProduct, inStock: boolean, available: boolean) => {
     if (!inStock || !available) return false;
     setStorageError(null);
@@ -225,12 +188,8 @@ export function CartProvider({ children }: Readonly<{ children: React.ReactNode 
       return [...current, { ...product, quantity: 1 }];
     });
     setBumpKey((current) => current + 1);
-    pauseToast();
-    if (toastCloseTimer.current) clearTimeout(toastCloseTimer.current);
-    setToast({ item: { ...product, quantity: 1 }, closing: false });
-    toastTimer.current = setTimeout(dismissToast, 10_000);
     return true;
-  }, [dismissToast, pauseToast]);
+  }, []);
 
   const replaceItems = useCallback((nextItems: CartItem[]) => {
     setStorageError(null);
@@ -294,97 +253,6 @@ export function CartProvider({ children }: Readonly<{ children: React.ReactNode 
   return (
     <CartContext.Provider value={value}>
       {children}
-      {toast ? (
-        <section
-          className={`cart-toast${toast.closing ? " is-closing" : ""}`}
-          role="status"
-          aria-live="polite"
-          tabIndex={0}
-          onClick={(event) => {
-            if (
-              event.target instanceof Element &&
-              event.target.closest("a, button")
-            ) {
-              return;
-            }
-            router.push("/cart");
-          }}
-          onKeyDown={(event) => {
-            if (
-              event.target === event.currentTarget &&
-              (event.key === "Enter" || event.key === " ")
-            ) {
-              event.preventDefault();
-              router.push("/cart");
-            }
-          }}
-          onPointerEnter={pauseToast}
-          onPointerLeave={resumeToast}
-          onTouchStart={pauseToast}
-          onTouchEnd={resumeToast}
-          onTouchCancel={resumeToast}
-        >
-          <CartThumbnail
-            photoUrl={toast.item.shade?.imageUrl ?? toast.item.photoUrl}
-          />
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center justify-between gap-2">
-              <p className="text-sm font-semibold">Added to cart</p>
-              <button
-                type="button"
-                className="cart-toast-close"
-                aria-label="Close"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  dismissToast();
-                }}
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  width="20"
-                  height="20"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeLinecap="round"
-                  strokeWidth="2"
-                  aria-hidden="true"
-                >
-                  <path d="m6 6 12 12M18 6 6 18" />
-                </svg>
-              </button>
-            </div>
-            <p className="truncate font-semibold">{toast.item.name}</p>
-            {toast.item.shade ? (
-              <p className="truncate text-sm">
-                Shade: {toast.item.shade.code ? `${toast.item.shade.code} ` : ""}
-                {toast.item.shade.name}
-              </p>
-            ) : null}
-            <div className="mt-2 flex flex-wrap items-center gap-2">
-              <Link
-                href="/cart"
-                className="btn-primary min-h-11 px-4"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  dismissToast();
-                }}
-              >
-                Checkout
-              </Link>
-              <button
-                type="button"
-                className="min-h-11 px-2 text-sm font-semibold underline underline-offset-4"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  dismissToast();
-                }}
-              >
-                Continue shopping
-              </button>
-            </div>
-          </div>
-        </section>
-      ) : null}
     </CartContext.Provider>
   );
 }

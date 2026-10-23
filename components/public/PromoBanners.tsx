@@ -1,5 +1,5 @@
-import Link from "next/link";
 import Image from "next/image";
+import ShopNowButton from "@/components/ui/ShopNowButton";
 import type { BannerRow } from "@/lib/data";
 
 export default function PromoBanners({
@@ -57,15 +57,7 @@ export default function PromoBanners({
                 </div>
                 {b.link_url && (
                   <div className="mt-6">
-                    <Link
-                      href={b.link_url}
-                      className="inline-flex items-center gap-1.5 rounded-full bg-white px-5 py-2.5 text-xs font-bold text-gray-900 transition-all hover:bg-emerald-50 active:scale-95"
-                    >
-                      <span>Explore Collection</span>
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                        <polyline points="9 18 15 12 9 6" />
-                      </svg>
-                    </Link>
+                    <ShopNowButton href={b.link_url} text="Explore Collection" />
                   </div>
                 )}
               </div>
@@ -101,15 +93,7 @@ export default function PromoBanners({
               </p>
             </div>
             <div className="mt-6">
-              <Link
-                href="/categories/skincare"
-                className="inline-flex items-center gap-1.5 rounded-full bg-white px-5 py-2.5 text-xs font-bold text-emerald-900 transition-all hover:bg-emerald-50 active:scale-95"
-              >
-                <span>Shop Skincare</span>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <polyline points="9 18 15 12 9 6" />
-                </svg>
-              </Link>
+              <ShopNowButton href="/categories/skincare" text="Shop Skincare" />
             </div>
           </div>
 
@@ -140,15 +124,7 @@ export default function PromoBanners({
               </p>
             </div>
             <div className="mt-6">
-              <Link
-                href="/categories/makeup-nails"
-                className="inline-flex items-center gap-1.5 rounded-full bg-white px-5 py-2.5 text-xs font-bold text-rose-950 transition-all hover:bg-rose-50 active:scale-95"
-              >
-                <span>Shop Makeup</span>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <polyline points="9 18 15 12 9 6" />
-                </svg>
-              </Link>
+              <ShopNowButton href="/categories/makeup-nails" text="Shop Makeup" />
             </div>
           </div>
 

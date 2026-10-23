@@ -1,9 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import Link from "next/link";
-
 import Image from "next/image";
+import ShopNowButton from "@/components/ui/ShopNowButton";
 import type { BannerRow } from "@/lib/data";
 
 type Slide = {
@@ -201,28 +200,7 @@ export default function HeroSlider({
 
               {/* CTA Button */}
               <div>
-                <Link
-                  href={slide.ctaLink}
-                  className="inline-flex items-center gap-2 rounded-full px-6 py-3 text-xs font-bold uppercase tracking-wider text-gray-900 shadow-lg transition-transform hover:scale-105 active:scale-95 sm:text-sm"
-                  style={{
-                    backgroundColor: slide.accentColor,
-                  }}
-                >
-                  <span>{slide.ctaText}</span>
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    aria-hidden="true"
-                  >
-                    <polyline points="9 18 15 12 9 6" />
-                  </svg>
-                </Link>
+                <ShopNowButton href={slide.ctaLink} text={slide.ctaText} />
               </div>
             </div>
 
