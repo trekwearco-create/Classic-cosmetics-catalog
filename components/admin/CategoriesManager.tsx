@@ -6,6 +6,7 @@ import Image from "next/image";
 import CategoryImageUploader from "@/components/admin/CategoryImageUploader";
 import {
   deleteCategoryAction,
+  fastUpdateCategoryAction,
   saveCategoryAction,
   type CategoryFormState,
 } from "@/lib/actions/categories";
@@ -19,7 +20,7 @@ export default function CategoriesManager({
 }: {
   initial: AdminCategory[];
 }) {
-  const [categories] = useState(initial);
+  const [categories, setCategories] = useState(initial);
   const [search, setSearch] = useState("");
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState<AdminCategory | null>(null);
@@ -32,9 +33,32 @@ export default function CategoriesManager({
   const [imageUrl, setImageUrl] = useState("");
   const [sortOrder, setSortOrder] = useState<number>(0);
   const [showInMenu, setShowInMenu] = useState(true);
+  const [showInHomepage, setShowInHomepage] = useState(false);
   const [isActive, setIsActive] = useState(true);
   const [description, setDescription] = useState("");
   const [autoSlug, setAutoSlug] = useState(true);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
+
+  const handleToggleHomepage = async (c: AdminCategory) => {
+    const nextVal = !c.show_in_homepage;
+    setTogglingId(c.id);
+    setCategories((prev) =>
+      prev.map((item) =>
+        item.id === c.id ? { ...item, show_in_homepage: nextVal } : item,
+      ),
+    );
+    const res = await fastUpdateCategoryAction(c.id, { show_in_homepage: nextVal });
+    if (!res.success) {
+      setCategories((prev) =>
+        prev.map((item) =>
+          item.id === c.id ? { ...item, show_in_homepage: !nextVal } : item,
+        ),
+      );
+    } else {
+      notifyCatalogChanged();
+    }
+    setTogglingId(null);
+  };
 
   // Expanded tree branches
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
@@ -91,6 +115,7 @@ export default function CategoriesManager({
     setImageUrl(c.image_url ?? "");
     setSortOrder(c.sort_order);
     setShowInMenu(c.show_in_menu !== false);
+    setShowInHomepage(c.show_in_homepage === true);
     setIsActive(c.is_active !== false);
     setDescription(c.description ?? "");
     setAutoSlug(false);
@@ -106,6 +131,7 @@ export default function CategoriesManager({
     setImageUrl("");
     setSortOrder(0);
     setShowInMenu(true);
+    setShowInHomepage(false);
     setIsActive(true);
     setDescription("");
     setAutoSlug(true);
@@ -165,8 +191,13 @@ export default function CategoriesManager({
             Category Tree
           </h1>
           <p className="mt-1 text-sm text-gray-500">
-            Unlimited depth category hierarchy for desktop mega-menu and mobile navigation.
+            Unlimited depth category hierarchy for desktop mega-menu, mobile navigation, and homepage &ldquo;Shop by Category&rdquo;.
           </p>
+          <div className="mt-2.5 flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-800 border border-emerald-200 shadow-sm">
+              ★ {categories.filter((c) => c.show_in_homepage).length} on Homepage &ldquo;Shop by Category&rdquo;
+            </span>
+          </div>
         </div>
         <div className="flex gap-2">
           <button
@@ -207,12 +238,13 @@ export default function CategoriesManager({
       ) : filteredCategories ? (
         /* Search results view */
         <div className="card overflow-x-auto">
-          <table className="w-full min-w-[650px] text-left text-sm">
+          <table className="w-full min-w-[720px] text-left text-sm">
             <thead>
               <tr style={{ background: "var(--linen)" }}>
                 <th className="px-4 py-3 font-bold">Category</th>
                 <th className="px-4 py-3 font-bold">Full Path</th>
                 <th className="px-4 py-3 font-bold">Products</th>
+                <th className="px-4 py-3 font-bold">Homepage</th>
                 <th className="px-4 py-3 font-bold">Status</th>
                 <th className="px-4 py-3 font-bold">Actions</th>
               </tr>
@@ -232,6 +264,21 @@ export default function CategoriesManager({
                   </td>
                   <td className="px-4 py-3 text-xs text-gray-500">{c.full_path || c.name}</td>
                   <td className="px-4 py-3">{c.product_count}</td>
+                  <td className="px-4 py-3">
+                    <button
+                      type="button"
+                      onClick={() => handleToggleHomepage(c)}
+                      disabled={togglingId === c.id}
+                      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold transition ${
+                        c.show_in_homepage
+                          ? "bg-emerald-700 text-white shadow-sm hover:bg-emerald-800"
+                          : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                      }`}
+                      title="Toggle appearance in Homepage 'Shop by Category'"
+                    >
+                      ★ {c.show_in_homepage ? "On Homepage" : "+ Add to Home"}
+                    </button>
+                  </td>
                   <td className="px-4 py-3">
                     <span className={`inline-block rounded px-2 py-0.5 text-xs font-medium ${c.is_active !== false ? "bg-emerald-100 text-emerald-800" : "bg-gray-100 text-gray-600"}`}>
                       {c.is_active !== false ? "Active" : "Hidden"}
@@ -302,6 +349,19 @@ export default function CategoriesManager({
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
+                      onClick={() => handleToggleHomepage(level1)}
+                      disabled={togglingId === level1.id}
+                      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold transition ${
+                        level1.show_in_homepage
+                          ? "bg-emerald-700 text-white shadow-sm hover:bg-emerald-800"
+                          : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                      }`}
+                      title="Toggle appearance in Homepage 'Shop by Category'"
+                    >
+                      ★ {level1.show_in_homepage ? "On Homepage" : "+ Homepage"}
+                    </button>
+                    <button
+                      type="button"
                       onClick={() => startAdd(level1.id)}
                       className="rounded-md border border-emerald-300 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800 hover:bg-emerald-100"
                     >
@@ -358,6 +418,19 @@ export default function CategoriesManager({
                             <div className="flex items-center gap-2">
                               <button
                                 type="button"
+                                onClick={() => handleToggleHomepage(level2)}
+                                disabled={togglingId === level2.id}
+                                className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold transition ${
+                                  level2.show_in_homepage
+                                    ? "bg-emerald-700 text-white shadow-sm hover:bg-emerald-800"
+                                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                                }`}
+                                title="Toggle appearance in Homepage 'Shop by Category'"
+                              >
+                                ★ {level2.show_in_homepage ? "Home" : "+ Home"}
+                              </button>
+                              <button
+                                type="button"
                                 onClick={() => startAdd(level2.id)}
                                 className="text-xs text-emerald-700 hover:underline"
                               >
@@ -398,6 +471,19 @@ export default function CategoriesManager({
                                     )}
                                   </div>
                                   <div className="flex items-center gap-2">
+                                    <button
+                                      type="button"
+                                      onClick={() => handleToggleHomepage(level3)}
+                                      disabled={togglingId === level3.id}
+                                      className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-semibold transition ${
+                                        level3.show_in_homepage
+                                          ? "bg-emerald-700 text-white"
+                                          : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                                      }`}
+                                      title="Toggle appearance in Homepage 'Shop by Category'"
+                                    >
+                                      ★ {level3.show_in_homepage ? "Home" : "+"}
+                                    </button>
                                     <button
                                       type="button"
                                       onClick={() => startEdit(level3)}
@@ -546,7 +632,17 @@ export default function CategoriesManager({
                     className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none"
                   />
                 </div>
-                <div className="flex flex-col justify-center gap-2 pt-4">
+                <div className="flex flex-col justify-center gap-2 pt-2">
+                  <label className="flex items-center gap-2 text-xs font-semibold text-gray-800 cursor-pointer rounded-lg bg-emerald-50/90 p-2.5 border border-emerald-200 shadow-sm">
+                    <input
+                      type="checkbox"
+                      name="show_in_homepage"
+                      checked={showInHomepage}
+                      onChange={(e) => setShowInHomepage(e.target.checked)}
+                      className="rounded text-emerald-600 h-4 w-4"
+                    />
+                    <span className="font-bold text-emerald-900">Show in Shop by Category (Homepage)</span>
+                  </label>
                   <label className="flex items-center gap-2 text-xs font-semibold text-gray-700 cursor-pointer">
                     <input
                       type="checkbox"

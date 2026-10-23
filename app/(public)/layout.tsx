@@ -1,4 +1,5 @@
 import Header from "@/components/public/Header";
+import Footer from "@/components/public/Footer";
 import PromoStrip from "@/components/public/PromoStrip";
 import CatalogSync from "@/components/public/CatalogSync";
 import { CartProvider } from "@/components/public/CartProvider";
@@ -18,9 +19,10 @@ export default async function PublicLayout({
       {/* Promo strip sits above the sticky header */}
       <PromoStrip />
       <Header categoryTree={tree} menuLinks={links} />
-      <main id="main-content">
+      <div id="main-content" className="min-h-[70vh]">
         {children}
-      </main>
+      </div>
+      <Footer />
     </CartProvider>
   );
 }

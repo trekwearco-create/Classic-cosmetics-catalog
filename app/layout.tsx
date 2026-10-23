@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Bodoni_Moda, Figtree } from "next/font/google";
 
+import Loader from "@/components/ui/Loader";
 import "./globals.css";
 
 const bodoni = Bodoni_Moda({
@@ -48,7 +49,10 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className={`${bodoni.variable} ${figtree.variable}`}>
-      <body>{children}</body>
+      <body>
+        <Loader />
+        {children}
+      </body>
     </html>
   );
 }

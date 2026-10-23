@@ -405,7 +405,7 @@ export default function CartPage({
               </div>
               <div className="flex items-center gap-1.5">
                 <span className="text-emerald-700 font-bold">⚡</span>
-                <span>Safe Cash on Delivery & Express Dispatch</span>
+                <span>Verified Secure Payment & Express Dispatch</span>
               </div>
             </div>
           </form>

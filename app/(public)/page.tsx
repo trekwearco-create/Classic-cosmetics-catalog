@@ -14,6 +14,7 @@ import ProductCard from "@/components/public/ProductCard";
 import KoreanBeautyShowcase from "@/components/public/KoreanBeautyShowcase";
 import {
   listCategories,
+  listHomepageCategories,
   PAGE_SIZE,
   searchProductCards,
   getBestSellers,
@@ -105,7 +106,7 @@ export default async function HomePage({
 
   // Highfy-style full Home Page Experience with database-driven sections
   const [categories, bestSellers, latestDrop, homeSections] = await Promise.all([
-    listCategories(),
+    listHomepageCategories(),
     getBestSellers(8),
     getLatestDrop(8),
     getHomeSectionsWithBanners(),

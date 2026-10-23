@@ -6,6 +6,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import AddToCartButton from "@/components/public/AddToCartButton";
 import MessageDialog from "@/components/public/MessageDialog";
+import StickyMobileCartBar from "@/components/product/StickyMobileCartBar";
 import type { ProductDetail } from "@/lib/data";
 
 type ProductShade = ProductDetail["shades"][number];
@@ -207,7 +208,8 @@ export default function ProductView({
   }
 
   return (
-    <main className="product-detail-layout mt-4 pb-36 md:mt-8 md:pb-10">
+    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 overflow-x-hidden">
+      <main className="product-detail-layout mt-4 pb-36 md:mt-8 md:pb-10">
       <div className="product-gallery" aria-label={`Images of ${product.name}`}>
         {galleryImages.length > 0 ? (
           <div className="product-gallery-track" key={mainImage ?? "empty"}>
@@ -307,7 +309,7 @@ export default function ProductView({
             </span>
           </div>
 
-          <h1 className="break-anywhere mt-2.5 text-2xl font-extrabold text-gray-900 md:text-3xl" style={{ fontFamily: "var(--font-display, serif)" }}>
+          <h1 className="break-anywhere mt-2.5 text-xl sm:text-2xl md:text-3xl font-serif font-bold text-gray-900 leading-tight">
             {product.name}
           </h1>
 
@@ -679,5 +681,18 @@ export default function ProductView({
         onDismiss={() => setDialogMessage("")}
       />
     </main>
-  );
+    <StickyMobileCartBar
+      product={product}
+      selectedShade={selectedShade}
+      onSelectShade={chooseShade}
+      onMissingShade={() => {
+        shadeSelectorRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+        shadeSelectorRef.current?.focus({ preventScroll: true });
+      }}
+    />
+  </div>
+);
 }

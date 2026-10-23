@@ -19,6 +19,7 @@ const categorySchema = z.object({
   image_url: z.string().url().max(500).refine(isPublicImageUrl).nullish(),
   parent_id: z.string().uuid().nullish(),
   show_in_menu: z.coerce.boolean().optional(),
+  show_in_homepage: z.coerce.boolean().optional(),
   is_active: z.coerce.boolean().optional(),
   description: z.string().trim().max(1000).nullish(),
 });
@@ -93,6 +94,7 @@ export async function saveCategoryAction(
     image_url: formData.get("image_url") || undefined,
     parent_id: parentId,
     show_in_menu: formData.get("show_in_menu") === "on" || formData.get("show_in_menu") === "true",
+    show_in_homepage: formData.get("show_in_homepage") === "on" || formData.get("show_in_homepage") === "true",
     is_active: formData.get("is_active") === null ? true : formData.get("is_active") === "on" || formData.get("is_active") === "true",
     description: formData.get("description") || undefined,
   });
@@ -155,6 +157,9 @@ export async function saveCategoryAction(
   }
   if (parsed.data.show_in_menu !== undefined) {
     values.show_in_menu = parsed.data.show_in_menu;
+  }
+  if (parsed.data.show_in_homepage !== undefined) {
+    values.show_in_homepage = parsed.data.show_in_homepage;
   }
   if (parsed.data.is_active !== undefined) {
     values.is_active = parsed.data.is_active;
@@ -272,4 +277,34 @@ export async function deleteCategoryAction(
   revalidatePath("/categories");
   revalidatePath("/categories/[slug]", "page");
   return { success: "Category deleted" };
+}
+
+export async function fastUpdateCategoryAction(
+  id: string,
+  updates: {
+    show_in_homepage?: boolean;
+    sort_order?: number;
+    image_url?: string | null;
+  },
+): Promise<{ success: boolean; error?: string }> {
+  const admin = await requireAdmin();
+  if (!admin) return { success: false, error: "Unauthorized" };
+
+  const supabase = await supabaseServer();
+  const values: Record<string, unknown> = {};
+  if (updates.show_in_homepage !== undefined) values.show_in_homepage = updates.show_in_homepage;
+  if (updates.sort_order !== undefined) values.sort_order = updates.sort_order;
+  if (updates.image_url !== undefined) values.image_url = updates.image_url || null;
+
+  const { error } = await supabase.from("categories").update(values).eq("id", id);
+  if (error) {
+    log.error("fast category update failed", { code: error.code });
+    return { success: false, error: "Update failed" };
+  }
+
+  updateTag("public-catalog");
+  revalidatePath("/");
+  revalidatePath("/admin/categories");
+  revalidatePath("/categories");
+  return { success: true };
 }

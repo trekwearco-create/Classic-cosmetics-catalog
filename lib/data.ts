@@ -23,6 +23,7 @@ export type CategoryRow = {
   sort_order: number;
   parent_id?: string | null;
   show_in_menu?: boolean;
+  show_in_homepage?: boolean;
   is_active?: boolean;
   description?: string | null;
 };
@@ -95,14 +96,14 @@ async function loadCategories(): Promise<CategoryRow[]> {
     // Try full schema first
     const fullRes = await supabase
       .from("categories")
-      .select("id, name, slug, image_url, sort_order, parent_id, show_in_menu, is_active, description")
+      .select("id, name, slug, image_url, sort_order, parent_id, show_in_menu, show_in_homepage, is_active, description")
       .order("sort_order")
       .order("name");
     if (!fullRes.error && fullRes.data) {
       return fullRes.data as CategoryRow[];
     }
 
-    // Fallback if migration 006 not applied yet
+    // Fallback if migration not applied yet
     const fallbackRes = await supabase
       .from("categories")
       .select("id, name, slug, image_url, sort_order")
@@ -116,6 +117,7 @@ async function loadCategories(): Promise<CategoryRow[]> {
       ...c,
       parent_id: null,
       show_in_menu: true,
+      show_in_homepage: false,
       is_active: true,
       description: null,
     })) as CategoryRow[];
@@ -132,6 +134,19 @@ const cachedCategories = unstable_cache(loadCategories, ["public-categories"], {
 
 export async function listCategories(): Promise<CategoryRow[]> {
   return cachedCategories();
+}
+
+export async function listHomepageCategories(): Promise<CategoryRow[]> {
+  const all = await listCategories();
+  const active = all.filter((c) => c.is_active !== false);
+  const featured = active.filter((c) => c.show_in_homepage === true);
+  if (featured.length > 0) {
+    return featured.sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name));
+  }
+  // Fall back to top-level active categories if none selected
+  return active
+    .filter((c) => !c.parent_id)
+    .sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name));
 }
 
 export function buildCategoryTree(flat: CategoryRow[]): CategoryTreeNode[] {

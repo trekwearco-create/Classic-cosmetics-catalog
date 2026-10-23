@@ -76,6 +76,18 @@ const nextConfig: NextConfig = {
           : undefined,
     },
   },
+  async rewrites() {
+    return [
+      {
+        source: "/category/:slug*",
+        destination: "/categories/:slug*",
+      },
+      {
+        source: "/products/:slug*",
+        destination: "/product/:slug*",
+      },
+    ];
+  },
   async headers() {
     return [
       {

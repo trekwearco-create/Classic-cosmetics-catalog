@@ -11,6 +11,7 @@ export type AdminCategory = {
   product_count: number;
   parent_id?: string | null;
   show_in_menu?: boolean;
+  show_in_homepage?: boolean;
   is_active?: boolean;
   description?: string | null;
   children_count?: number;
@@ -46,7 +47,7 @@ export type AdminBanner = {
 export async function listCategoriesAdmin(): Promise<AdminCategory[]> {
   const supabase = await supabaseServer();
   
-  // Try with full schema first
+  // Try with full schema first (including show_in_homepage)
   let rows: Array<{
     id: string;
     name: string;
@@ -55,6 +56,7 @@ export async function listCategoriesAdmin(): Promise<AdminCategory[]> {
     sort_order: number;
     parent_id?: string | null;
     show_in_menu?: boolean;
+    show_in_homepage?: boolean;
     is_active?: boolean;
     description?: string | null;
     products: { count: number }[] | null;
@@ -62,14 +64,14 @@ export async function listCategoriesAdmin(): Promise<AdminCategory[]> {
 
   const fullRes = await supabase
     .from("categories")
-    .select("id, name, slug, image_url, sort_order, parent_id, show_in_menu, is_active, description, products(count)")
+    .select("id, name, slug, image_url, sort_order, parent_id, show_in_menu, show_in_homepage, is_active, description, products(count)")
     .order("sort_order")
     .order("name");
 
   if (!fullRes.error && fullRes.data) {
     rows = fullRes.data as unknown as typeof rows;
   } else {
-    // Fallback if migration not run yet
+    // Fallback if show_in_homepage or other columns not in DB yet
     const fallbackRes = await supabase
       .from("categories")
       .select("id, name, slug, image_url, sort_order, products(count)")
@@ -80,6 +82,7 @@ export async function listCategoriesAdmin(): Promise<AdminCategory[]> {
       ...r,
       parent_id: null,
       show_in_menu: true,
+      show_in_homepage: false,
       is_active: true,
       description: null,
     })) as unknown as typeof rows;
@@ -119,6 +122,7 @@ export async function listCategoriesAdmin(): Promise<AdminCategory[]> {
     sort_order: r.sort_order,
     parent_id: r.parent_id ?? null,
     show_in_menu: r.show_in_menu !== false,
+    show_in_homepage: r.show_in_homepage === true,
     is_active: r.is_active !== false,
     description: r.description ?? null,
     product_count: r.products?.[0]?.count ?? 0,
