@@ -40,7 +40,7 @@ function IconSearch() {
 
 function IconChevronDown() {
   return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
       strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <polyline points="6 9 12 15 18 9" />
     </svg>
@@ -168,10 +168,10 @@ const DEFAULT_TREE: CategoryTreeNode[] = [
         is_active: true,
         children: [
           { id: "2-1-1", name: "Foundation", slug: "makeup-foundation", sort_order: 10, parent_id: "2-1", image_url: null, show_in_menu: true, is_active: true, children: [] },
-          { id: "2-1-2", name: "BB Cream", slug: "makeup-bb-cream", sort_order: 20, parent_id: "2-1", image_url: null, show_in_menu: true, is_active: true, children: [] },
-          { id: "2-1-3", name: "Color Corrector", slug: "makeup-color-corrector", sort_order: 30, parent_id: "2-1", image_url: null, show_in_menu: true, is_active: true, children: [] },
-          { id: "2-1-4", name: "Concealer", slug: "makeup-concealer", sort_order: 40, parent_id: "2-1", image_url: null, show_in_menu: true, is_active: true, children: [] },
-          { id: "2-1-5", name: "Face Powder", slug: "makeup-face-powder", sort_order: 50, parent_id: "2-1", image_url: null, show_in_menu: true, is_active: true, children: [] },
+          { id: "2-1-2", name: "BB Cream & Skin Tints", slug: "makeup-bb-cream", sort_order: 20, parent_id: "2-1", image_url: null, show_in_menu: true, is_active: true, children: [] },
+          { id: "2-1-3", name: "Concealer", slug: "makeup-concealer", sort_order: 30, parent_id: "2-1", image_url: null, show_in_menu: true, is_active: true, children: [] },
+          { id: "2-1-4", name: "Compact Powder", slug: "makeup-face-powder", sort_order: 40, parent_id: "2-1", image_url: null, show_in_menu: true, is_active: true, children: [] },
+          { id: "2-1-5", name: "Color Corrector", slug: "makeup-color-corrector", sort_order: 50, parent_id: "2-1", image_url: null, show_in_menu: true, is_active: true, children: [] },
           { id: "2-1-6", name: "Primer", slug: "makeup-primer", sort_order: 60, parent_id: "2-1", image_url: null, show_in_menu: true, is_active: true, children: [] },
         ],
       },
@@ -581,7 +581,6 @@ function MobileDrawer({
                     onClick={onClose}
                   >
                     <span>{l1.name}</span>
-                    <span className="text-gray-400">&rarr;</span>
                   </Link>
                 )}
 
@@ -589,11 +588,11 @@ function MobileDrawer({
                 {hasL2 && (
                   <div
                     className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                      isL1Open ? "max-h-[2200px] opacity-100" : "max-h-0 opacity-0"
+                      isL1Open ? "max-h-[2600px] opacity-100" : "max-h-0 opacity-0"
                     }`}
                   >
                     <div className="bg-gray-50/90 px-4 py-2.5 space-y-1.5 border-t border-gray-100">
-                      {/* View all link */}
+                      {/* View all link for root */}
                       <Link
                         href={`/categories/${l1.slug}`}
                         className="flex items-center justify-between py-1.5 px-3 text-xs font-bold text-emerald-800 hover:underline"
@@ -610,7 +609,7 @@ function MobileDrawer({
                         return (
                           <div
                             key={l2.id}
-                            className="rounded-lg bg-white border border-gray-100 shadow-sm overflow-hidden"
+                            className="rounded-lg bg-white border border-gray-100 shadow-xs overflow-hidden"
                           >
                             {hasL3 ? (
                               <>
@@ -638,7 +637,7 @@ function MobileDrawer({
                                 <div
                                   className={`overflow-hidden transition-all duration-200 ease-in-out ${
                                     isL2Open
-                                      ? "max-h-[1000px] opacity-100"
+                                      ? "max-h-[1200px] opacity-100"
                                       : "max-h-0 opacity-0"
                                   }`}
                                 >
@@ -670,7 +669,6 @@ function MobileDrawer({
                                 onClick={onClose}
                               >
                                 <span>{l2.name}</span>
-                                <span className="text-gray-400">&rarr;</span>
                               </Link>
                             )}
                           </div>
@@ -739,6 +737,29 @@ export default function Header({
       ? [...orderedRoots, ...remainingRoots].slice(0, 7)
       : allRoots.slice(0, 7);
 
+  // Ensure each root category has its full 3-level tree attached
+  const fallbackMap = new Map(DEFAULT_TREE.map((c) => [c.slug, c]));
+  const enhancedRoots = displayRoots.map((root) => {
+    if (root.children && root.children.length > 0) {
+      const hasGrandchildren = root.children.some(
+        (c) => c.children && c.children.length > 0,
+      );
+      if (hasGrandchildren) {
+        return root;
+      }
+    }
+    const fallback =
+      fallbackMap.get(root.slug) ||
+      DEFAULT_TREE.find((f) => f.name.toLowerCase() === root.name.toLowerCase());
+    if (fallback && fallback.children && fallback.children.length > 0) {
+      return {
+        ...root,
+        children: fallback.children,
+      };
+    }
+    return root;
+  });
+
   useEffect(() => {
     function onScroll() {
       setScrolled(window.scrollY > 4);
@@ -771,13 +792,13 @@ export default function Header({
         className={`site-header relative${scrolled ? " scrolled" : ""}`}
         onMouseLeave={handleMouseLeave}
       >
-        {/* Top Header Bar */}
-        <div className="wrap site-header-inner">
-          {/* Left: Mobile hamburger (mobile only, hidden on desktop) */}
-          <div className="header-start flex items-center md:!hidden">
+        {/* Top Header Bar: Logo far left on Desktop, Search/Cart far right */}
+        <div className="wrap flex items-center justify-between min-h-[64px] py-2 md:py-3.5">
+          {/* Mobile Only: Left Hamburger Menu Button */}
+          <div className="flex items-center md:hidden">
             <button
               type="button"
-              className="hamburger-btn md:!hidden"
+              className="hamburger-btn"
               aria-label="Open navigation menu"
               aria-expanded={drawerOpen}
               onClick={openDrawer}
@@ -786,25 +807,25 @@ export default function Header({
             </button>
           </div>
 
-          {/* Centre: Logo */}
-          <div className="flex justify-center">
-            <Link href="/" aria-label="Classic Cosmetics home">
+          {/* Logo: Aligned to far left on Desktop (`md:justify-start`), Centered on Mobile */}
+          <div className="flex items-center justify-center md:justify-start flex-1 md:flex-initial">
+            <Link href="/" aria-label="Classic Cosmetics home" className="flex items-center">
               <Image
                 src="/logo.png"
                 alt="Classic Cosmetics"
                 width={130}
                 height={52}
                 priority
-                className="h-[48px] w-auto object-contain md:h-[54px]"
+                className="h-[44px] sm:h-[48px] md:h-[54px] w-auto object-contain"
               />
             </Link>
           </div>
 
-          {/* Right: Search & Cart */}
-          <div className="header-end flex items-center gap-2">
+          {/* Right Side: Search Icon + Cart Icon Button with count badge (`justify-end`, aligned to far right) */}
+          <div className="flex items-center justify-end gap-2 sm:gap-3">
             <Link
               href="/#search-products-heading"
-              className="header-icon-btn"
+              className="header-icon-btn flex h-10 w-10 items-center justify-center rounded-full text-gray-700 hover:bg-gray-100 hover:text-emerald-800 transition-colors"
               aria-label="Search catalog"
             >
               <IconSearch />
@@ -813,14 +834,14 @@ export default function Header({
           </div>
         </div>
 
-        {/* Desktop Category Navigation Bar: ONLY Root Categories + Brands */}
-        <div className="hidden md:block border-t border-gray-100 bg-white">
+        {/* Navigation Row: ONLY Root Categories + Brands */}
+        <div className="hidden md:block border-t border-gray-100 bg-white shadow-xs">
           <div className="wrap">
             <nav
-              className="flex items-center justify-center gap-1 lg:gap-3 py-2"
+              className="flex items-center justify-center gap-1 lg:gap-3 py-2.5"
               aria-label="Main category navigation"
             >
-              {displayRoots.map((item) => {
+              {enhancedRoots.map((item) => {
                 const hasChildren = item.children && item.children.length > 0;
                 const isExpanded = activeMegaCategory?.id === item.id;
 
@@ -832,16 +853,16 @@ export default function Header({
                   >
                     <Link
                       href={`/categories/${item.slug}`}
-                      className={`desktop-nav-link flex items-center gap-1 px-3 py-1.5 text-[13px] font-bold transition-colors whitespace-nowrap ${
+                      className={`desktop-nav-link flex items-center gap-1.5 px-3 py-1.5 text-[13px] font-bold transition-colors whitespace-nowrap ${
                         isExpanded
-                          ? "text-emerald-700 bg-emerald-50/80 rounded-md"
+                          ? "text-emerald-700 bg-emerald-50/90 rounded-md"
                           : "text-gray-800 hover:text-emerald-700"
                       }`}
                       aria-expanded={isExpanded}
                     >
                       <span>{item.name}</span>
                       {hasChildren && (
-                        <span className="opacity-50 text-[10px]">
+                        <span className={`text-gray-400 transition-transform duration-200 ${isExpanded ? "rotate-180 text-emerald-700" : ""}`}>
                           <IconChevronDown />
                         </span>
                       )}
@@ -857,7 +878,7 @@ export default function Header({
               >
                 <Link
                   href="/brands"
-                  className="desktop-nav-link flex items-center gap-1 px-3 py-1.5 text-[13px] font-bold text-gray-800 hover:text-emerald-700 transition-colors whitespace-nowrap"
+                  className="desktop-nav-link flex items-center gap-1.5 px-3 py-1.5 text-[13px] font-bold text-gray-800 hover:text-emerald-700 transition-colors whitespace-nowrap"
                 >
                   <span>Brands</span>
                 </Link>
@@ -866,20 +887,20 @@ export default function Header({
           </div>
         </div>
 
-        {/* Desktop Mega Menu Dropdown */}
+        {/* Desktop 3-Level Mega Menu (Hover to Open) */}
         {activeMegaCategory &&
           activeMegaCategory.children &&
           activeMegaCategory.children.length > 0 && (
             <div
-              className="mega-menu absolute left-0 right-0 top-full z-50 border-t-2 border-emerald-700 bg-white shadow-2xl transition-all"
+              className="mega-menu absolute left-0 right-0 w-full bg-white shadow-xl border-t border-gray-100 z-50 p-8 transition-all"
               onMouseEnter={() => {
                 if (megaMenuTimeoutRef.current)
                   clearTimeout(megaMenuTimeoutRef.current);
               }}
               onMouseLeave={handleMouseLeave}
             >
-              <div className="wrap py-8">
-                <div className="mb-5 flex items-center justify-between border-b border-gray-100 pb-3">
+              <div className="wrap">
+                <div className="mb-6 flex items-center justify-between border-b border-gray-100 pb-3">
                   <div className="flex items-center gap-3">
                     <h2
                       className="text-xl font-extrabold text-gray-900"
@@ -903,14 +924,14 @@ export default function Header({
                   </Link>
                 </div>
 
-                {/* 3-level grid: Subcategories as bold column headers, sub-sub-categories below */}
-                <div className="grid grid-cols-2 gap-x-6 gap-y-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+                {/* Sub-categories as Bold Column Headers, Sub-sub-categories below */}
+                <div className="grid grid-cols-2 gap-x-8 gap-y-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
                   {activeMegaCategory.children.map((subcat) => (
-                    <div key={subcat.id} className="space-y-2">
+                    <div key={subcat.id} className="space-y-2.5">
                       <Link
                         href={`/categories/${subcat.slug}`}
                         onClick={() => setActiveMegaCategory(null)}
-                        className="block text-xs font-bold uppercase tracking-wider text-gray-900 hover:text-emerald-700"
+                        className="block text-xs font-bold uppercase tracking-wider text-gray-900 hover:text-emerald-700 transition-colors"
                       >
                         {subcat.name}
                       </Link>
@@ -922,7 +943,7 @@ export default function Header({
                               <Link
                                 href={`/categories/${child.slug}`}
                                 onClick={() => setActiveMegaCategory(null)}
-                                className="block text-xs text-gray-600 transition hover:text-emerald-700 hover:translate-x-0.5"
+                                className="block text-xs text-gray-600 transition-colors hover:text-emerald-700 hover:translate-x-0.5 duration-150"
                               >
                                 {child.name}
                               </Link>
@@ -942,7 +963,7 @@ export default function Header({
       <MobileDrawer
         open={drawerOpen}
         onClose={closeDrawer}
-        roots={displayRoots}
+        roots={enhancedRoots}
       />
     </>
   );
