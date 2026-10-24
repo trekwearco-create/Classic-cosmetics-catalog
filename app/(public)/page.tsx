@@ -121,7 +121,7 @@ export default async function HomePage({
   const getBanners = (key: string) => sectionsMap.get(key)?.banners ?? [];
 
   return (
-    <main className="flex flex-col gap-0 pb-12">
+    <main className="min-h-screen w-full overflow-x-hidden overflow-y-auto flex flex-col gap-0 pb-12">
       {/* 1. Animated Premium Hero */}
       <AnimatedHero />
 

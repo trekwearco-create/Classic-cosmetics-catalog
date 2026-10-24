@@ -20,7 +20,7 @@ export default async function PublicLayout({
       {/* Promo strip sits above the sticky header */}
       <PromoStrip />
       <Header categoryTree={tree} menuLinks={links} />
-      <div id="main-content" className="min-h-[70vh] overflow-x-hidden w-full max-w-full">
+      <div id="main-content" className="min-h-[70vh] w-full">
         {children}
       </div>
       <Footer />
