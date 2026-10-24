@@ -551,6 +551,42 @@ export async function moveCategoryAction(
   return { slug: "/admin/products" };
 }
 
+export async function toggleProductCurationAction(
+  _prev: ProductFormState,
+  formData: FormData,
+): Promise<ProductFormState> {
+  if (!(await isAdmin())) redirect("/admin/login");
+  if (!(await sameOriginCheck())) {
+    return { error: "Something went wrong. Please try again." };
+  }
+
+  const id = z.string().uuid().safeParse(formData.get("id"));
+  const field = z
+    .enum(["is_best_seller", "is_korean"])
+    .safeParse(formData.get("field"));
+  const value = z.enum(["true", "false"]).safeParse(formData.get("value"));
+
+  if (!id.success || !field.success || !value.success) {
+    return { error: "Something went wrong. Please try again." };
+  }
+
+  const supabase = await supabaseServer();
+  const { error } = await supabase
+    .from("products")
+    .update({ [field.data]: value.data === "true" })
+    .eq("id", id.data);
+
+  if (error) {
+    log.error("product curation toggle failed", { code: error.code });
+    return { error: "Something went wrong. Please try again." };
+  }
+
+  updateTag("public-catalog");
+  revalidatePath("/");
+  revalidatePath("/admin/products");
+  return {};
+}
+
 export async function deleteImageAction(
   _prev: ProductFormState,
   formData: FormData,

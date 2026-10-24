@@ -396,13 +396,143 @@ export async function searchProductCards(args: SearchArgs): Promise<ProductCardR
 }
 
 export async function getBestSellers(limit = 8): Promise<ProductCardRow[]> {
-  const cards = await searchProductCards({ q: null, category: null, page: 1 });
-  const sorted = [...cards].sort((a, b) => {
-    const aDiscount = a.price && a.discount_price ? (a.price - a.discount_price) / a.price : 0;
-    const bDiscount = b.price && b.discount_price ? (b.price - b.discount_price) / b.price : 0;
-    return bDiscount - aDiscount;
-  });
-  return sorted.slice(0, limit);
+  try {
+    const supabase = supabasePublic();
+    const { data, error } = await supabase
+      .from("products")
+      .select(
+        "id, slug, name, in_stock, category_id, price, discount_price, is_best_seller",
+      )
+      .eq("is_visible", true)
+      .eq("is_best_seller", true)
+      .order("updated_at", { ascending: false })
+      .limit(limit);
+
+    if (error || !data || data.length === 0) {
+      // Fallback: return top discounted products
+      const cards = await searchProductCards({ q: null, category: null, page: 1 });
+      const sorted = [...cards].sort((a, b) => {
+        const aDiscount = a.price && a.discount_price ? (a.price - a.discount_price) / a.price : 0;
+        const bDiscount = b.price && b.discount_price ? (b.price - b.discount_price) / b.price : 0;
+        return bDiscount - aDiscount;
+      });
+      return sorted.slice(0, limit);
+    }
+
+    const ids = data.map((r: { id: string }) => r.id);
+    const [imagesRes, categoriesRes, shadesRes] = await Promise.all([
+      supabase
+        .from("product_images")
+        .select("product_id, image_url, is_cover, sort_order")
+        .in("product_id", ids)
+        .order("sort_order"),
+      supabase.from("categories").select("id, name"),
+      supabase
+        .from("product_shades")
+        .select("product_id, color_hex")
+        .in("product_id", ids)
+        .not("color_hex", "is", null),
+    ]);
+
+    const coverByProduct = new Map<string, string>();
+    const firstByProduct = new Map<string, string>();
+    for (const img of imagesRes.data ?? []) {
+      const key = img.product_id;
+      if (img.is_cover && !coverByProduct.has(key)) coverByProduct.set(key, img.image_url);
+      if (!firstByProduct.has(key)) firstByProduct.set(key, img.image_url);
+    }
+    const categoryNameById = new Map(
+      (categoriesRes.data ?? []).map((item: { id: string; name: string }) => [item.id, item.name]),
+    );
+    const shadesByProduct = new Map<string, string[]>();
+    for (const shade of shadesRes.data ?? []) {
+      if (!shade.color_hex) continue;
+      const colors = shadesByProduct.get(shade.product_id) ?? [];
+      colors.push(shade.color_hex);
+      shadesByProduct.set(shade.product_id, colors);
+    }
+
+    return (data as Array<{ id: string; slug: string; name: string; in_stock: boolean; category_id: string; price: number | null; discount_price: number | null }>).map((r) => ({
+      id: r.id,
+      slug: r.slug,
+      name: r.name,
+      in_stock: r.in_stock,
+      category_name: categoryNameById.get(r.category_id) ?? "",
+      cover_url: coverByProduct.get(r.id) ?? firstByProduct.get(r.id) ?? null,
+      shade_colors: shadesByProduct.get(r.id) ?? [],
+      price: r.price ?? null,
+      discount_price: r.discount_price ?? null,
+    }));
+  } catch {
+    log.warn("getBestSellers failed, falling back");
+    const cards = await searchProductCards({ q: null, category: null, page: 1 });
+    return cards.slice(0, limit);
+  }
+}
+
+export async function getKoreanProducts(limit = 8): Promise<ProductCardRow[]> {
+  try {
+    const supabase = supabasePublic();
+    const { data, error } = await supabase
+      .from("products")
+      .select(
+        "id, slug, name, in_stock, category_id, price, discount_price, is_korean",
+      )
+      .eq("is_visible", true)
+      .eq("is_korean", true)
+      .order("updated_at", { ascending: false })
+      .limit(limit);
+
+    if (error || !data || data.length === 0) return [];
+
+    const ids = data.map((r: { id: string }) => r.id);
+    const [imagesRes, categoriesRes, shadesRes] = await Promise.all([
+      supabase
+        .from("product_images")
+        .select("product_id, image_url, is_cover, sort_order")
+        .in("product_id", ids)
+        .order("sort_order"),
+      supabase.from("categories").select("id, name"),
+      supabase
+        .from("product_shades")
+        .select("product_id, color_hex")
+        .in("product_id", ids)
+        .not("color_hex", "is", null),
+    ]);
+
+    const coverByProduct = new Map<string, string>();
+    const firstByProduct = new Map<string, string>();
+    for (const img of imagesRes.data ?? []) {
+      const key = img.product_id;
+      if (img.is_cover && !coverByProduct.has(key)) coverByProduct.set(key, img.image_url);
+      if (!firstByProduct.has(key)) firstByProduct.set(key, img.image_url);
+    }
+    const categoryNameById = new Map(
+      (categoriesRes.data ?? []).map((item: { id: string; name: string }) => [item.id, item.name]),
+    );
+    const shadesByProduct = new Map<string, string[]>();
+    for (const shade of shadesRes.data ?? []) {
+      if (!shade.color_hex) continue;
+      const colors = shadesByProduct.get(shade.product_id) ?? [];
+      colors.push(shade.color_hex);
+      shadesByProduct.set(shade.product_id, colors);
+    }
+
+    return (data as Array<{ id: string; slug: string; name: string; in_stock: boolean; category_id: string; price: number | null; discount_price: number | null }>).map((r) => ({
+      id: r.id,
+      slug: r.slug,
+      name: r.name,
+      in_stock: r.in_stock,
+      category_name: categoryNameById.get(r.category_id) ?? "",
+      cover_url: coverByProduct.get(r.id) ?? firstByProduct.get(r.id) ?? null,
+      shade_colors: shadesByProduct.get(r.id) ?? [],
+      price: r.price ?? null,
+      discount_price: r.discount_price ?? null,
+    }));
+  } catch {
+    log.warn("getKoreanProducts failed");
+    return [];
+  }
 }
 
 export async function getLatestDrop(limit = 8): Promise<ProductCardRow[]> {

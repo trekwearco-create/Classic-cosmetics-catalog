@@ -182,6 +182,8 @@ export type AdminProductRow = {
   in_stock: boolean;
   category_name: string;
   cover_url: string | null;
+  is_best_seller: boolean;
+  is_korean: boolean;
 };
 
 export async function listProductsAdmin(filters?: {
@@ -192,7 +194,7 @@ export async function listProductsAdmin(filters?: {
   let query = supabase
     .from("products")
     .select(
-      "id, name, slug, is_visible, in_stock, categories(name), product_images(image_url, is_cover, sort_order)",
+      "id, name, slug, is_visible, in_stock, is_best_seller, is_korean, categories(name), product_images(image_url, is_cover, sort_order)",
     )
     .order("created_at", { ascending: false });
 
@@ -214,6 +216,8 @@ export async function listProductsAdmin(filters?: {
       slug: string;
       is_visible: boolean;
       in_stock: boolean;
+      is_best_seller: boolean | null;
+      is_korean: boolean | null;
       categories: { name: string } | null;
       product_images:
         | { image_url: string; is_cover: boolean; sort_order: number }[]
@@ -229,6 +233,8 @@ export async function listProductsAdmin(filters?: {
       in_stock: r.in_stock,
       category_name: r.categories?.name ?? "",
       cover_url: cover?.image_url ?? null,
+      is_best_seller: r.is_best_seller ?? false,
+      is_korean: r.is_korean ?? false,
     };
   });
 }

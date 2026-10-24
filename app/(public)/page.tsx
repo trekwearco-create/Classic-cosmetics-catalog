@@ -1,11 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import HeroSlider from "@/components/public/HeroSlider";
+import AnimatedHero from "@/components/home/AnimatedHero";
 import CategoryRail from "@/components/public/CategoryRail";
 import ProductRail from "@/components/public/ProductRail";
 import PromoBanners from "@/components/public/PromoBanners";
-import BrandShowcase from "@/components/public/BrandShowcase";
 import TrustBadges from "@/components/public/TrustBadges";
 import NewsSection from "@/components/public/NewsSection";
 import SearchBar from "@/components/public/SearchBar";
@@ -18,6 +17,7 @@ import {
   PAGE_SIZE,
   searchProductCards,
   getBestSellers,
+  getKoreanProducts,
   getLatestDrop,
   getHomeSectionsWithBanners,
 } from "@/lib/data";
@@ -58,7 +58,7 @@ export default async function HomePage({
                 {q ? "Search results" : selectedCategory?.name ?? "Catalog"}
               </p>
               <h1 id="search-products-heading" className="break-anywhere text-2xl font-extrabold text-gray-900 md:text-3xl">
-                {q ? `Products for “${q}”` : selectedCategory ? selectedCategory.name : "All Products"}
+                {q ? `Products for "${q}"` : selectedCategory ? selectedCategory.name : "All Products"}
               </h1>
             </div>
             {(q || category) && (
@@ -105,9 +105,10 @@ export default async function HomePage({
   }
 
   // Highfy-style full Home Page Experience with database-driven sections
-  const [categories, bestSellers, latestDrop, homeSections] = await Promise.all([
+  const [categories, bestSellers, koreanProducts, latestDrop, homeSections] = await Promise.all([
     listHomepageCategories(),
-    getBestSellers(8),
+    getBestSellers(12),
+    getKoreanProducts(12),
     getLatestDrop(8),
     getHomeSectionsWithBanners(),
   ]);
@@ -120,73 +121,91 @@ export default async function HomePage({
   const getBanners = (key: string) => sectionsMap.get(key)?.banners ?? [];
 
   return (
-    <main className="mt-3 flex flex-col gap-6 pb-12 sm:mt-5 sm:gap-8 md:gap-10">
-      {/* 1. Highfy Mobile Search Bar */}
-      <div className="md:hidden">
+    <main className="flex flex-col gap-0 pb-12">
+      {/* 1. Animated Premium Hero — replaces static banner slider */}
+      <AnimatedHero />
+
+      {/* 2. Mobile Search Bar */}
+      <div className="mt-3 md:hidden px-4">
         <SearchBar />
       </div>
 
-      {/* 2. Hero Banner Carousel */}
-      {isVisible("hero_slider") && (
-        <HeroSlider banners={getBanners("hero_slider")} />
-      )}
-
       {/* 3. Circular Category Stories Rail */}
       {isVisible("category_icons") && (
-        <CategoryRail categories={categories} />
+        <div className="mt-6 sm:mt-8">
+          <CategoryRail categories={categories} />
+        </div>
       )}
 
-      {/* 4. Best Sellers Rail / Collection */}
-      {isVisible("best_sellers") && (
-        <ProductRail
-          title="Best Sellers"
-          subtitle="Customer Favorites"
-          viewAllHref="/categories"
-          products={bestSellers}
-        />
+      {/* 4. Best Sellers Rail — curated via admin is_best_seller flag */}
+      {isVisible("best_sellers") && bestSellers.length > 0 && (
+        <div className="mt-6 sm:mt-8">
+          <ProductRail
+            title="Best Sellers"
+            subtitle="Customer Favorites"
+            viewAllHref="/categories"
+            products={bestSellers}
+          />
+        </div>
       )}
 
       {/* 5. Must-Haves Promo Duo Banners */}
-      {isVisible("must_haves") && (
-        <PromoBanners banners={getBanners("must_haves")} />
+      {isVisible("must_haves") && getBanners("must_haves").length > 0 && (
+        <div className="mt-6 sm:mt-8">
+          <PromoBanners banners={getBanners("must_haves")} />
+        </div>
       )}
 
-      {/* 6. Korean Beauty 3x3 Tiles Showcase */}
+      {/* 6. Korean Beauty — curated via admin is_korean flag */}
       {isVisible("korean_beauty") && (
-        <KoreanBeautyShowcase
-          banners={getBanners("korean_beauty")}
-          title={sectionsMap.get("korean_beauty")?.title || "Korean Beauty Essentials"}
-        />
+        <div className="mt-6 sm:mt-8">
+          {koreanProducts.length > 0 ? (
+            <ProductRail
+              title={sectionsMap.get("korean_beauty")?.title || "Korean Beauty Essentials"}
+              subtitle="K-Beauty Picks"
+              viewAllHref="/categories"
+              products={koreanProducts}
+            />
+          ) : getBanners("korean_beauty").length > 0 ? (
+            <KoreanBeautyShowcase
+              banners={getBanners("korean_beauty")}
+              title={sectionsMap.get("korean_beauty")?.title || "Korean Beauty Essentials"}
+            />
+          ) : null}
+        </div>
       )}
 
-      {/* 7. Top Brands Showcase */}
-      {isVisible("shop_imported") && (
-        <BrandShowcase />
+      {/* 7. Shop Local Promo */}
+      {isVisible("shop_local") && getBanners("shop_local").length > 0 && (
+        <div className="mt-6 sm:mt-8">
+          <PromoBanners banners={getBanners("shop_local")} />
+        </div>
       )}
 
-      {/* 8. Shop Local Promo */}
-      {isVisible("shop_local") && (
-        <PromoBanners banners={getBanners("shop_local")} />
-      )}
-
-      {/* 9. Latest Drop (New Arrivals) */}
+      {/* 8. Latest Drop (New Arrivals) */}
       {isVisible("latest_drop") && (
-        <ProductRail
-          title="Latest Drop"
-          subtitle="Fresh Arrivals"
-          viewAllHref="/categories"
-          products={latestDrop}
-        />
+        <div className="mt-6 sm:mt-8">
+          <ProductRail
+            title="Latest Drop"
+            subtitle="Fresh Arrivals"
+            viewAllHref="/categories"
+            products={latestDrop}
+          />
+        </div>
       )}
 
-      {/* 10. Trust Guarantees */}
+      {/* 9. Trust Guarantees */}
       {isVisible("trust_icons") && (
-        <TrustBadges />
+        <div className="mt-6 sm:mt-8 px-4 sm:px-6">
+          <TrustBadges />
+        </div>
       )}
 
-      {/* 11. Latest News & Beauty Journal */}
+      {/* 10. Latest News & Beauty Journal */}
       {isVisible("latest_news") && (
-        <NewsSection />
+        <div className="mt-6 sm:mt-8">
+          <NewsSection />
+        </div>
       )}
     </main>
   );
