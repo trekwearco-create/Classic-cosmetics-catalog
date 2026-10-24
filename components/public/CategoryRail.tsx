@@ -49,7 +49,7 @@ export default function CategoryRail({
       }));
 
   return (
-    <section aria-labelledby="category-rail-heading" className="py-2">
+    <section aria-labelledby="category-rail-heading" className="py-2 px-4 sm:px-6 max-w-7xl mx-auto w-full">
       <div className="mb-3 flex items-center justify-between">
         <h2 id="category-rail-heading" className="text-lg font-bold tracking-tight text-gray-900 sm:text-xl">
           Shop by Category

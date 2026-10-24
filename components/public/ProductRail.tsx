@@ -35,7 +35,7 @@ export default function ProductRail({
   if (!products || products.length === 0) return null;
 
   return (
-    <section className="py-4 sm:py-6">
+    <section className="py-4 sm:py-6 px-4 sm:px-6 max-w-7xl mx-auto w-full">
       {/* Header */}
       <div className="mb-4 flex items-end justify-between gap-4">
         <div>

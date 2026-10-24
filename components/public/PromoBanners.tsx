@@ -9,7 +9,7 @@ export default function PromoBanners({
 }) {
   if (banners.length > 0) {
     return (
-      <section aria-label="Curated promotions" className="py-4">
+      <section aria-label="Curated promotions" className="py-4 px-4 sm:px-6 max-w-7xl mx-auto w-full">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {banners.map((b, idx) => (
             <div

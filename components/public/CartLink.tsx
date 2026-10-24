@@ -1,14 +1,17 @@
 "use client";
 
-import Link from "next/link";
 import { useCart } from "@/components/public/CartProvider";
 
 export default function CartLink() {
-  const { itemCount, ready, bumpKey } = useCart();
+  const { itemCount, ready, bumpKey, openCart } = useCart();
   return (
-    <Link
-      href="/cart"
-      className="header-icon-btn"
+    <button
+      type="button"
+      onClick={(e) => {
+        e.preventDefault();
+        openCart();
+      }}
+      className="header-icon-btn cursor-pointer"
       aria-label={ready ? `Cart, ${itemCount} items` : "Cart"}
     >
       <span className="relative">
@@ -34,6 +37,6 @@ export default function CartLink() {
           </span>
         ) : null}
       </span>
-    </Link>
+    </button>
   );
 }

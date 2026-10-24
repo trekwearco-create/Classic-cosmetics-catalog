@@ -52,7 +52,7 @@ export default function AddToCartButton({
   className = "btn-secondary w-full",
   iconOnly = false,
 }: {
-  product: { id: string; slug: string; name: string; photoUrl?: string | null };
+  product: { id: string; slug: string; name: string; photoUrl?: string | null; price?: number | null };
   shade?: CartShade | null;
   inStock?: boolean;
   available?: boolean;
@@ -91,7 +91,7 @@ export default function AddToCartButton({
     setLoading(true);
     try {
       const ok = addItem(
-        { ...product, photoUrl: product.photoUrl ?? null, shade },
+        { ...product, photoUrl: product.photoUrl ?? null, shade, price: product.price ?? null },
         inStock,
         available,
       );

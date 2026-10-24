@@ -600,18 +600,14 @@ async function loadProductBySlug(
         .eq("product_id", product.id)
         .order("sort_order"),
     ]);
-    if (imagesRes.error || shadesRes.error) {
-      log.warn("public product detail query failed", {
-        code: imagesRes.error?.code ?? shadesRes.error?.code,
-      });
-      return null;
-    }
+    const imagesData = imagesRes.data ?? [];
+    const shadesData = shadesRes.data ?? [];
 
     const imageUrlById = new Map(
-      (imagesRes.data ?? []).map((image) => [image.id, image.image_url]),
+      imagesData.map((image) => [image.id, image.image_url]),
     );
     const shadeImageIds = new Set(
-      (shadesRes.data ?? [])
+      shadesData
         .map((shade) => shade.image_id)
         .filter((imageId): imageId is string => imageId !== null),
     );
@@ -623,17 +619,17 @@ async function loadProductBySlug(
       description: product.description,
       price: product.price ?? null,
       discount_price: product.discount_price ?? null,
-      in_stock: product.in_stock,
+      in_stock: Boolean(product.in_stock),
       category_name: product.categories?.name ?? "",
       category_slug: product.categories?.slug ?? "",
-      images: (imagesRes.data ?? [])
+      images: imagesData
         .filter((image) => image.is_cover || !shadeImageIds.has(image.id))
         .sort((a, b) => Number(b.is_cover) - Number(a.is_cover))
         .map((img) => ({
           id: img.id,
           url: img.image_url,
         })),
-      shades: (shadesRes.data ?? []).map((s) => ({
+      shades: shadesData.map((s) => ({
         id: s.id,
         code: s.code,
         name: s.name,
@@ -643,8 +639,8 @@ async function loadProductBySlug(
         image_url: s.image_id ? imageUrlById.get(s.image_id) ?? null : null,
       })),
     };
-  } catch {
-    log.warn("public product detail query failed");
+  } catch (err) {
+    log.warn("public product detail query caught exception", { err });
     return null;
   }
 }

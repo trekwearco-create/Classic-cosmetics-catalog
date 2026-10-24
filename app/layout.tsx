@@ -40,6 +40,8 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
   viewportFit: "cover",
   themeColor: "#1F7A4D",
 };
@@ -49,7 +51,13 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className={`${bodoni.variable} ${figtree.variable}`}>
-      <body>
+      <head>
+        <meta
+          name="viewport"
+          content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
+        />
+      </head>
+      <body className="overflow-x-hidden w-full max-w-full">
         <Loader />
         {children}
       </body>

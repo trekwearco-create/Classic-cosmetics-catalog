@@ -50,9 +50,8 @@ export default function ProductCard({ product }: { product: ProductCardRow }) {
             </div>
           )}
 
-          {/* Badges row: free delivery left, discount right */}
+          {/* Badges row: discount or sold out */}
           <div className="product-card-badges">
-            <span className="badge-free-delivery">Free Delivery</span>
             {hasDiscount ? (
               <span className="badge-discount">{discountPct}% OFF</span>
             ) : !inStock ? (
@@ -68,6 +67,7 @@ export default function ProductCard({ product }: { product: ProductCardRow }) {
                 slug:     product.slug,
                 name:     product.name,
                 photoUrl: product.cover_url,
+                price:    product.discount_price ?? product.price ?? null,
               }}
               inStock={inStock}
               iconOnly

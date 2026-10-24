@@ -7,6 +7,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import AddToCartButton from "@/components/public/AddToCartButton";
 import MessageDialog from "@/components/public/MessageDialog";
 import StickyMobileCartBar from "@/components/product/StickyMobileCartBar";
+import WhatsAppOrderButton from "@/components/ui/WhatsAppOrderButton";
 import type { ProductDetail } from "@/lib/data";
 
 type ProductShade = ProductDetail["shades"][number];
@@ -58,15 +59,15 @@ export default function ProductView({
   const selectedShadeOptionRef = useRef<HTMLButtonElement | null>(null);
   const pointerStartRef = useRef<{ x: number; y: number } | null>(null);
   const pointerMovedRef = useRef(false);
-  const baseImage = product.images[0]?.url ?? null;
+  const baseImage = product?.images?.[0]?.url ?? null;
   const mainImage = selectedShade?.image_url ?? baseImage;
   const galleryImages = [
     ...new Set([
       ...(mainImage ? [mainImage] : []),
-      ...product.images.map((image) => image.url),
+      ...(product?.images ?? []).map((image) => image?.url).filter(Boolean),
     ]),
   ];
-  const needsShade = product.shades.length > 0;
+  const needsShade = (product?.shades?.length ?? 0) > 0;
 
   function chooseShade(shade: ProductShade) {
     if (!shade.is_available) {
@@ -349,8 +350,8 @@ export default function ProductView({
               <span>100% Original Sourced</span>
             </div>
             <div className="flex items-center gap-1.5 rounded-lg border border-gray-100 bg-white p-2">
-              <span className="text-emerald-600 font-bold">⚡</span>
-              <span>Express 24-72h Delivery</span>
+              <span className="text-emerald-600 font-bold">💬</span>
+              <span>Direct WhatsApp Inquiry</span>
             </div>
           </div>
 
@@ -408,9 +409,9 @@ export default function ProductView({
               <span aria-hidden="true">{shadeMenuOpen ? "−" : "+"}</span>
             </button>
 
-            {product.shades.length <= 8 ? (
+            {(product?.shades || []).length <= 8 ? (
               <div className="shade-desktop-options mt-3 flex flex-wrap gap-2">
-                {product.shades.map((shade) => (
+                {(product?.shades || []).map((shade) => (
                   <button
                     key={shade.id}
                     type="button"
@@ -504,7 +505,7 @@ export default function ProductView({
                     }}
                     style={shadeMenuPosition ?? { visibility: "hidden" }}
                   >
-                    {product.shades.map((shade) => (
+                    {(product?.shades || []).map((shade) => (
                       <button
                         key={shade.id}
                         type="button"
@@ -584,7 +585,7 @@ export default function ProductView({
                   role="listbox"
                   aria-label="Product shades"
                 >
-                  {product.shades.map((shade) => (
+                  {(product?.shades || []).map((shade) => (
                     <button
                       key={shade.id}
                       ref={
@@ -633,13 +634,21 @@ export default function ProductView({
           </p>
         ) : null}
 
-        <div className="product-buy-bar">
+        <div className="product-buy-bar flex flex-col gap-2.5">
+          <WhatsAppOrderButton
+            productTitle={product?.name}
+            shadeName={selectedShade ? `${selectedShade.code ? `${selectedShade.code} ` : ""}${selectedShade.name}` : undefined}
+            price={product?.price ? String(product.price) : undefined}
+            label="ORDER ON WHATSAPP"
+            className="w-full py-3.5 text-xs font-bold tracking-widest shadow-md"
+          />
           <AddToCartButton
             product={{
-              id: product.id,
-              slug: product.slug,
-              name: product.name,
+              id: product?.id,
+              slug: product?.slug,
+              name: product?.name,
               photoUrl: baseImage,
+              price: product?.discount_price ?? product?.price ?? null,
             }}
             shade={selectedShade
               ? {
@@ -649,7 +658,7 @@ export default function ProductView({
                   imageUrl: selectedShade.image_url,
                 }
               : null}
-            inStock={product.in_stock}
+            inStock={product?.in_stock ?? true}
               available={selectedShade?.is_available ?? true}
               requiresShade={needsShade}
             onMissingShade={() => {

@@ -81,7 +81,7 @@ export default function Footer() {
               </li>
               <li>
                 <Link href="/shipping-policy" className="transition hover:text-white hover:underline">
-                  Shipping & Delivery Policy
+                  Shipping Policy
                 </Link>
               </li>
               <li>

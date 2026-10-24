@@ -45,7 +45,7 @@ export default function AnimatedHero() {
 
         {/* Trust micro-badges */}
         <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-          {["100% Original", "Express 24-72h Delivery", "WhatsApp Support"].map((badge) => (
+          {["100% Original", "Verified Quality", "WhatsApp Support"].map((badge) => (
             <span
               key={badge}
               className="inline-flex items-center gap-1.5 rounded-full border border-emerald-700/50 bg-emerald-950/40 px-3 py-1 text-[11px] font-medium text-emerald-300 backdrop-blur-sm"

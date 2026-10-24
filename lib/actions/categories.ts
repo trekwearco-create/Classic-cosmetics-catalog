@@ -305,6 +305,32 @@ export async function fastUpdateCategoryAction(
   updateTag("public-catalog");
   revalidatePath("/");
   revalidatePath("/admin/categories");
+  revalidatePath("/admin/featured-categories");
   revalidatePath("/categories");
+  return { success: true };
+}
+
+export async function updateFeaturedCategoriesAction(
+  updates: Array<{ id: string; show_in_homepage: boolean }>,
+): Promise<{ success: boolean; error?: string }> {
+  const admin = await requireAdmin();
+  if (!admin) return { success: false, error: "Unauthorized" };
+
+  const supabase = await supabaseServer();
+  for (const item of updates) {
+    const { error } = await supabase
+      .from("categories")
+      .update({ show_in_homepage: item.show_in_homepage })
+      .eq("id", item.id);
+    if (error) {
+      log.error("batch category update error", { code: error.code });
+      return { success: false, error: error.message };
+    }
+  }
+
+  updateTag("public-catalog");
+  revalidatePath("/");
+  revalidatePath("/admin/featured-categories");
+  revalidatePath("/admin/categories");
   return { success: true };
 }

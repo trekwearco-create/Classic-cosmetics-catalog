@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import CartLink from "@/components/public/CartLink";
+import SearchBar from "@/components/public/SearchBar";
 import type { CategoryTreeNode, MenuLinkRow } from "@/lib/data";
 
 /* ── Inline SVG Icons ────────────────────────────────────────── */
@@ -24,16 +25,6 @@ function IconClose() {
       strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <line x1="18" y1="6"  x2="6"  y2="18" />
       <line x1="6"  y1="6"  x2="18" y2="18" />
-    </svg>
-  );
-}
-
-function IconSearch() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <circle cx="11" cy="11" r="8" />
-      <line x1="21" y1="21" x2="16.65" y2="16.65" />
     </svg>
   );
 }
@@ -821,17 +812,20 @@ export default function Header({
             </Link>
           </div>
 
-          {/* Right Side: Search Icon + Cart Icon Button with count badge (`justify-end`, aligned to far right) */}
+          {/* Desktop Search Bar (Header center) */}
+          <div className="hidden md:flex flex-1 max-w-md mx-6">
+            <SearchBar />
+          </div>
+
+          {/* Right Side: Cart Icon Button with count badge (`justify-end`, aligned to far right) */}
           <div className="flex items-center justify-end gap-2 sm:gap-3">
-            <Link
-              href="/#search-products-heading"
-              className="header-icon-btn flex h-10 w-10 items-center justify-center rounded-full text-gray-700 hover:bg-gray-100 hover:text-emerald-800 transition-colors"
-              aria-label="Search catalog"
-            >
-              <IconSearch />
-            </Link>
             <CartLink />
           </div>
+        </div>
+
+        {/* Mobile Search Bar inside Header */}
+        <div className="md:hidden px-4 pb-2.5 bg-white">
+          <SearchBar />
         </div>
 
         {/* Navigation Row: ONLY Root Categories + Brands */}

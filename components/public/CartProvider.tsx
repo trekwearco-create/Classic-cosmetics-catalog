@@ -23,6 +23,7 @@ export type CartItem = {
   shade: CartShade | null;
   quantity: number;
   photoUrl: string | null;
+  price?: number | null;
 };
 
 type CartProduct = Omit<CartItem, "quantity">;
@@ -30,6 +31,10 @@ type CartContextValue = {
   items: CartItem[];
   itemCount: number;
   ready: boolean;
+  isOpen: boolean;
+  openCart: () => void;
+  closeCart: () => void;
+  toggleCart: () => void;
   storageError: string | null;
   bumpKey: number;
   addItem: (product: CartProduct, inStock: boolean, available: boolean) => boolean;
@@ -96,6 +101,7 @@ function parseCart(value: unknown): { items: CartItem[]; dropped: boolean } {
       typeof entry.photoUrl === "string" && entry.photoUrl.length <= 2048
         ? entry.photoUrl
         : null;
+    const price = typeof entry.price === "number" ? entry.price : null;
     const item: CartItem = {
       id: entry.id,
       slug: entry.slug,
@@ -103,6 +109,7 @@ function parseCart(value: unknown): { items: CartItem[]; dropped: boolean } {
       shade,
       quantity: entry.quantity as number,
       photoUrl,
+      price,
     };
     const key = lineKey(item.id, item.shade?.id ?? null);
     const duplicate = items.findIndex(
@@ -129,9 +136,14 @@ function lineKey(id: string, shadeId: string | null) {
 export function CartProvider({ children }: Readonly<{ children: React.ReactNode }>) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [ready, setReady] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
   const [storageError, setStorageError] = useState<string | null>(null);
   const [invalidData, setInvalidData] = useState(false);
   const [bumpKey, setBumpKey] = useState(0);
+
+  const openCart = useCallback(() => setIsOpen(true), []);
+  const closeCart = useCallback(() => setIsOpen(false), []);
+  const toggleCart = useCallback(() => setIsOpen((prev) => !prev), []);
 
   useEffect(() => {
     let active = true;
@@ -188,6 +200,7 @@ export function CartProvider({ children }: Readonly<{ children: React.ReactNode 
       return [...current, { ...product, quantity: 1 }];
     });
     setBumpKey((current) => current + 1);
+    setIsOpen(true);
     return true;
   }, []);
 
@@ -228,6 +241,10 @@ export function CartProvider({ children }: Readonly<{ children: React.ReactNode 
       items,
       itemCount: items.reduce((count, item) => count + item.quantity, 0),
       ready,
+      isOpen,
+      openCart,
+      closeCart,
+      toggleCart,
       bumpKey,
       storageError: invalidData
         ? "Some invalid saved cart items were removed."
@@ -240,6 +257,10 @@ export function CartProvider({ children }: Readonly<{ children: React.ReactNode 
     [
       items,
       ready,
+      isOpen,
+      openCart,
+      closeCart,
+      toggleCart,
       bumpKey,
       storageError,
       invalidData,

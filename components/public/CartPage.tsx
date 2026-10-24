@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 
 import CartThumbnail from "@/components/public/CartThumbnail";
 import MessageDialog from "@/components/public/MessageDialog";
+import WhatsAppOrderButton from "@/components/ui/WhatsAppOrderButton";
 import {
   useCart,
   type CartItem,
@@ -221,18 +222,6 @@ export default function CartPage({
         )}
       </div>
 
-      {items.length > 0 && (
-        <div className="mt-4 rounded-xl border border-emerald-100 bg-emerald-50/60 p-3.5 text-xs">
-          <div className="flex items-center gap-2 font-bold text-emerald-900">
-            <span>🚚</span>
-            <span>Fast Nationwide Delivery (24 to 72 Hours)</span>
-          </div>
-          <p className="mt-1 text-emerald-700">
-            Orders across Pakistan are packaged securely in temperature-regulated beauty boxes.
-          </p>
-        </div>
-      )}
-
       {storageError ? (
         <p
           className="mt-4 rounded-xl border border-brick p-3 text-sm"
@@ -389,31 +378,10 @@ export default function CartPage({
                 {formError}
               </p>
             ) : null}
-            <button
-              ref={confirmButtonRef}
-              type="submit"
-              disabled={checking}
-              className={`group relative inline-flex items-center justify-center overflow-hidden rounded-full border border-[#0c3b25] px-8 py-3.5 text-xs font-semibold uppercase tracking-[0.22em] transition-all duration-300 ease-out w-full ${
-                checking
-                  ? "bg-white text-transparent cursor-not-allowed shadow-none"
-                  : "bg-[#0c3b25] text-white hover:bg-white hover:text-[#0c3b25] shadow-sm active:scale-[0.98]"
-              }`}
-            >
-              <span className="absolute inset-0 h-full w-full bg-white transition-transform duration-300 ease-out -translate-y-full group-hover:translate-y-0 -z-0"></span>
-              <span className="relative z-10 font-serif transition-colors duration-300">
-                {checking ? "Checking availability…" : "Confirm order"}
-              </span>
-              {checking && (
-                <div className="absolute inset-0 z-20 flex items-center justify-center bg-white">
-                  <div className="relative flex h-5 w-5 items-center justify-center">
-                    <div className="absolute inset-0 rounded-full border border-emerald-300 animate-[ping_1.0s_cubic-bezier(0,0,0.2,1)_infinite] opacity-60"></div>
-                    <div className="h-5 w-5 rounded-full border border-emerald-100"></div>
-                    <div className="absolute h-5 w-5 rounded-full border-[1.5px] border-transparent border-t-[#0c3b25] border-r-[#0c3b25] animate-[spin_1.0s_linear_infinite]"></div>
-                    <div className="h-1 w-1 rounded-full bg-[#0c3b25]"></div>
-                  </div>
-                </div>
-              )}
-            </button>
+            <WhatsAppOrderButton
+              cartItems={items}
+              className="w-full py-4 text-xs font-bold tracking-widest shadow-md"
+            />
 
             <div className="mt-2 flex flex-col gap-1.5 border-t border-gray-100 pt-3 text-[11px] text-gray-500">
               <div className="flex items-center gap-1.5">

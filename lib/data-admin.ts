@@ -191,7 +191,7 @@ export async function listProductsAdmin(filters?: {
   category?: string;
 }): Promise<AdminProductRow[]> {
   const supabase = await supabaseServer();
-  let query = supabase
+  let fullQuery = supabase
     .from("products")
     .select(
       "id, name, slug, is_visible, in_stock, is_best_seller, is_korean, categories(name), product_images(image_url, is_cover, sort_order)",
@@ -200,14 +200,33 @@ export async function listProductsAdmin(filters?: {
 
   const q = filters?.q?.trim();
   if (q) {
-    query = query.ilike("name", `%${q.replace(/[\\%_]/g, (c) => `\\${c}`)}%`);
+    fullQuery = fullQuery.ilike("name", `%${q.replace(/[\\%_]/g, (c) => `\\${c}`)}%`);
   }
   if (filters?.category) {
-    query = query.eq("category_id", filters.category);
+    fullQuery = fullQuery.eq("category_id", filters.category);
   }
 
-  const { data, error } = await query;
-  if (error) throw new Error(error.message);
+  const fullRes = await fullQuery;
+  let data = fullRes.data;
+
+  if (fullRes.error) {
+    // Fallback if is_best_seller or is_korean columns are not yet in DB
+    let fallbackQuery = supabase
+      .from("products")
+      .select(
+        "id, name, slug, is_visible, in_stock, categories(name), product_images(image_url, is_cover, sort_order)",
+      )
+      .order("created_at", { ascending: false });
+    if (q) {
+      fallbackQuery = fallbackQuery.ilike("name", `%${q.replace(/[\\%_]/g, (c) => `\\${c}`)}%`);
+    }
+    if (filters?.category) {
+      fallbackQuery = fallbackQuery.eq("category_id", filters.category);
+    }
+    const fallbackRes = await fallbackQuery;
+    if (fallbackRes.error) throw new Error(fallbackRes.error.message);
+    data = fallbackRes.data as unknown as typeof data;
+  }
 
   return (data ?? []).map((row) => {
     const r = row as unknown as {

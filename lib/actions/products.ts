@@ -584,7 +584,31 @@ export async function toggleProductCurationAction(
   updateTag("public-catalog");
   revalidatePath("/");
   revalidatePath("/admin/products");
+  revalidatePath("/admin/korean-products");
   return {};
+}
+
+export async function updateKoreanProductsAction(
+  updates: Array<{ id: string; is_korean: boolean }>,
+): Promise<{ success: boolean; error?: string }> {
+  if (!(await isAdmin())) return { success: false, error: "Unauthorized" };
+  const supabase = await supabaseServer();
+  for (const item of updates) {
+    const { error } = await supabase
+      .from("products")
+      .update({ is_korean: item.is_korean })
+      .eq("id", item.id);
+    if (error) {
+      log.error("batch korean product update error", { code: error.code });
+      return { success: false, error: error.message };
+    }
+  }
+
+  updateTag("public-catalog");
+  revalidatePath("/");
+  revalidatePath("/admin/korean-products");
+  revalidatePath("/admin/products");
+  return { success: true };
 }
 
 export async function deleteImageAction(

@@ -25,7 +25,7 @@ import {
 export const metadata: Metadata = {
   title: "Classic Cosmetics | Best Cosmetics Store in Pakistan | Authentic Beauty Products",
   description:
-    "Experience 100% authentic cosmetics, skincare, perfumes, and beauty tools in Pakistan. Enjoy express nationwide delivery within 24 to 72 hours.",
+    "Experience 100% authentic cosmetics, skincare, perfumes, and beauty tools in Pakistan. Browse curated collections and order directly via WhatsApp.",
 };
 
 export default async function HomePage({
@@ -122,15 +122,10 @@ export default async function HomePage({
 
   return (
     <main className="flex flex-col gap-0 pb-12">
-      {/* 1. Animated Premium Hero — replaces static banner slider */}
+      {/* 1. Animated Premium Hero */}
       <AnimatedHero />
 
-      {/* 2. Mobile Search Bar */}
-      <div className="mt-3 md:hidden px-4">
-        <SearchBar />
-      </div>
-
-      {/* 3. Circular Category Stories Rail */}
+      {/* 2. Circular Category Stories Rail */}
       {isVisible("category_icons") && (
         <div className="mt-6 sm:mt-8">
           <CategoryRail categories={categories} />

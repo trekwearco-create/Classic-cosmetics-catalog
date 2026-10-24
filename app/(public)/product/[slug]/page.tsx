@@ -3,8 +3,6 @@ import { notFound } from "next/navigation";
 
 import ProductView from "@/components/public/ProductView";
 import { getProductBySlug } from "@/lib/data";
-import { env } from "@/lib/env";
-import { productLinkPath } from "@/lib/whatsapp";
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -12,19 +10,17 @@ type Props = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
+  if (!slug) {
+    return { title: "Product | Classic Cosmetics" };
+  }
   const product = await getProductBySlug(slug);
-  const title = product
-    ? `${product.name} | Classic Cosmetics`
-    : "Product | Classic Cosmetics";
-  const description = product?.description?.slice(0, 150) ?? "Elegance in Every Detail";
-  const productUrl = new URL(
-    productLinkPath(product?.slug ?? slug),
-    env().SITE_URL,
-  ).toString();
-  const imageUrl = new URL(
-    `${productLinkPath(product?.slug ?? slug)}/og`,
-    env().SITE_URL,
-  ).toString();
+  if (!product) {
+    return { title: "Product | Classic Cosmetics" };
+  }
+
+  const title = `${product.name || "Product"} | Classic Cosmetics`;
+  const description = product.description?.slice(0, 150) ?? "Elegance in Every Detail";
+  const coverImage = product.images?.[0]?.url;
 
   return {
     title: { absolute: title },
@@ -32,30 +28,28 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     openGraph: {
       title,
       description,
-      url: productUrl,
       type: "website",
-      images: [
-        {
-          url: imageUrl,
-          width: 1200,
-          height: 630,
-          alt: product ? `${product.name} product photo` : "Classic Cosmetics",
-        },
-      ],
+      images: coverImage ? [{ url: coverImage, alt: product.name || "Product" }] : [],
     },
     twitter: {
       card: "summary_large_image",
       title,
       description,
-      images: [imageUrl],
+      images: coverImage ? [coverImage] : [],
     },
   };
 }
 
 export default async function ProductPage({ params }: Props) {
   const { slug } = await params;
+  if (!slug || typeof slug !== "string") {
+    notFound();
+  }
+
   const product = await getProductBySlug(slug);
-  if (!product) notFound();
+  if (!product || !product.id) {
+    notFound();
+  }
 
   return <ProductView product={product} />;
 }

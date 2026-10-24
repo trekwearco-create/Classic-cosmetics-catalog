@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { useCart, type CartShade } from "@/components/public/CartProvider";
 import type { ProductDetail } from "@/lib/data";
 
@@ -19,7 +18,6 @@ export default function StickyMobileCartBar({
   onSelectShade,
   onMissingShade,
 }: StickyMobileCartBarProps) {
-  const router = useRouter();
   const { addItem } = useCart();
   const [visible, setVisible] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -79,7 +77,7 @@ export default function StickyMobileCartBar({
     );
 
     if (success) {
-      router.push("/cart");
+      setSubmitting(false);
     } else {
       setSubmitting(false);
     }
