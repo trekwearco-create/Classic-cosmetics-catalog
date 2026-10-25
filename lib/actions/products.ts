@@ -33,8 +33,8 @@ const shadeSchema = z.object({
 const productSchema = z.object({
   id: z.string().uuid(),
   name: z.string().trim().min(2).max(120),
-  category_id: z.string().uuid(),
-  brand_id: z.string().uuid().nullish(),
+  category_id: z.string().uuid().nullish().or(z.literal("")),
+  brand_id: z.string().uuid().nullish().or(z.literal("")),
   description: z.string().max(2000).nullish(),
   price: z.number().min(0).nullish(),
   discount_price: z.number().min(0).nullish(),
@@ -52,6 +52,7 @@ function revalidateLiveStorefront(slug?: string, oldSlug?: string) {
   try {
     updateTag("public-catalog");
   } catch {}
+  revalidatePath("/(public)", "layout");
   revalidatePath("/", "layout"); // Revalidates whole storefront immediately
   revalidatePath("/(public)", "page");
   revalidatePath("/shop");
@@ -62,9 +63,11 @@ function revalidateLiveStorefront(slug?: string, oldSlug?: string) {
   revalidatePath("/categories/[slug]", "page");
   if (slug) {
     revalidatePath(`/product/${slug}`);
+    revalidatePath(`/products/${slug}`);
   }
   if (oldSlug && oldSlug !== slug) {
     revalidatePath(`/product/${oldSlug}`);
+    revalidatePath(`/products/${oldSlug}`);
   }
 }
 
@@ -177,16 +180,29 @@ export async function saveProductAction(
   }
   const isUpdate = productRow !== null;
 
-  const { data: category } = await supabase
-    .from("categories")
-    .select("id")
-    .eq("id", data.category_id)
-    .maybeSingle();
-  if (!category) {
-    return { error: "Choose a category to continue." };
+  const selectedCategoryId =
+    data.category_id && data.category_id.trim() !== "" ? data.category_id : null;
+  const selectedBrandId =
+    data.brand_id && data.brand_id.trim() !== "" ? data.brand_id : null;
+
+  if (selectedCategoryId) {
+    const { data: category } = await supabase
+      .from("categories")
+      .select("id")
+      .eq("id", selectedCategoryId)
+      .maybeSingle();
+    if (!category) {
+      return { error: "Choose a valid category to continue." };
+    }
   }
 
-  const slugBase = slugify(data.name);
+  // Auto-generate URL-safe slugs
+  const slugBase =
+    data.name
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)+/g, "") || `product-${Date.now().toString(36)}`;
   let slug = isUpdate && productRow !== null ? productRow.slug : slugBase;
   if (!isUpdate) {
     const { data: slugTaken } = await supabase
@@ -201,8 +217,8 @@ export async function saveProductAction(
 
   const productValues: Record<string, unknown> = {
     name: data.name,
-    category_id: data.category_id,
-    brand_id: data.brand_id || null,
+    category_id: selectedCategoryId ? selectedCategoryId : null,
+    brand_id: selectedBrandId ? selectedBrandId : null,
     description: data.description ?? null,
     is_visible: data.is_visible,
     in_stock: data.in_stock,
@@ -214,7 +230,14 @@ export async function saveProductAction(
     ? await supabase.from("products").update(productValues).eq("id", data.id)
     : await supabase
         .from("products")
-        .insert({ ...productValues, slug, id: data.id });
+        .insert({
+          ...productValues,
+          slug,
+          id: data.id,
+          is_korean: false,
+          is_best_seller: false,
+          show_in_homepage: false,
+        });
 
   if (productError) {
     log.error("product save failed", { code: productError.code });

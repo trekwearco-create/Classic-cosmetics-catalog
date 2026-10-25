@@ -4,6 +4,8 @@ import Link from "next/link";
 import CategoryCard from "@/components/public/CategoryCard";
 import { listCategories } from "@/lib/data";
 
+export const revalidate = 1800;
+
 export const metadata: Metadata = {
   title: "All Categories | Classic Cosmetics",
   description: "Browse 100% authentic cosmetics, skincare, perfumes, haircare, and beauty tools by category.",
@@ -18,7 +20,7 @@ export default async function CategoriesPage() {
     <main className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 overflow-x-hidden">
       {/* Breadcrumbs */}
       <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-gray-500 mb-3">
-        <Link href="/" className="hover:text-emerald-700 hover:underline">
+        <Link href="/" prefetch={true} className="hover:text-emerald-700 hover:underline">
           Home
         </Link>
         <span>/</span>

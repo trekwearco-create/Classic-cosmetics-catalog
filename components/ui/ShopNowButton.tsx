@@ -12,6 +12,7 @@ export default function ShopNowButton({
   return (
     <Link
       href={href}
+      prefetch={true}
       className={`group relative inline-flex items-center justify-between gap-3 overflow-hidden rounded-full border border-[#0C3B25] bg-[#0C3B25] px-5 py-2.5 sm:px-6 sm:py-3 shadow-sm transition-all duration-500 ease-out hover:bg-white hover:shadow-md hover:shadow-emerald-950/10 active:scale-[0.98] ${className}`}
     >
       <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 ease-in-out group-hover:translate-x-full"></div>

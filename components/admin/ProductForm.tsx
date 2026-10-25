@@ -205,8 +205,8 @@ export default function ProductForm({
 
   function handleSubmit() {
     setFormError(null);
-    if (name.trim().length < 2 || categoryId === "") {
-      setFormError("Fill in the name and choose a category.");
+    if (name.trim().length < 2) {
+      setFormError("Fill in the product name (minimum 2 characters).");
       return;
     }
     if (pendingShadeInput) {
@@ -231,8 +231,8 @@ export default function ProductForm({
       JSON.stringify({
         id: initial.id,
         name: name.trim(),
-        category_id: categoryId,
-        brand_id: selectedBrandId || null,
+        category_id: categoryId ? categoryId : null,
+        brand_id: selectedBrandId ? selectedBrandId : null,
         description: description.trim() === "" ? null : description.trim(),
         price: price.trim() === "" ? null : Number(price),
         discount_price: discountPrice.trim() === "" ? null : Number(discountPrice),

@@ -58,6 +58,7 @@ export default function ProductRail({
           {viewAllHref && (
             <Link
               href={viewAllHref}
+              prefetch={true}
               className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 hover:text-emerald-800 hover:underline sm:text-sm"
             >
               <span>View all</span>

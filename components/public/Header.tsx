@@ -520,7 +520,7 @@ function MobileDrawer({
         tabIndex={-1}
       >
         <div className="drawer-header">
-          <Link href="/" onClick={onClose} aria-label="Home">
+          <Link href="/" prefetch={true} onClick={onClose} aria-label="Home">
             <Image
               src="/logo.png"
               alt="Classic Cosmetics"
@@ -568,6 +568,7 @@ function MobileDrawer({
                 ) : (
                   <Link
                     href={`/categories/${l1.slug}`}
+                    prefetch={true}
                     className="flex w-full items-center justify-between py-3.5 px-5 text-sm font-bold text-gray-900 transition-colors hover:text-emerald-700 active:bg-gray-50"
                     onClick={onClose}
                   >
@@ -586,6 +587,7 @@ function MobileDrawer({
                       {/* View all link for root */}
                       <Link
                         href={`/categories/${l1.slug}`}
+                        prefetch={true}
                         className="flex items-center justify-between py-1.5 px-3 text-xs font-bold text-emerald-800 hover:underline"
                         onClick={onClose}
                       >
@@ -635,6 +637,7 @@ function MobileDrawer({
                                   <div className="pl-4 pr-3 py-1 space-y-1 border-l-2 border-emerald-500 ml-3 mb-2 mt-0.5">
                                     <Link
                                       href={`/categories/${l2.slug}`}
+                                      prefetch={true}
                                       className="block py-1 text-xs font-bold text-emerald-700 hover:underline"
                                       onClick={onClose}
                                     >
@@ -644,6 +647,7 @@ function MobileDrawer({
                                       <Link
                                         key={l3.id}
                                         href={`/categories/${l3.slug}`}
+                                        prefetch={true}
                                         className="block py-1 text-[11px] text-gray-600 transition hover:text-emerald-700"
                                         onClick={onClose}
                                       >
@@ -656,6 +660,7 @@ function MobileDrawer({
                             ) : (
                               <Link
                                 href={`/categories/${l2.slug}`}
+                                prefetch={true}
                                 className="flex items-center justify-between py-2.5 px-3 text-xs font-semibold text-gray-800 hover:text-emerald-700"
                                 onClick={onClose}
                               >
@@ -676,6 +681,7 @@ function MobileDrawer({
           <div className="border-b border-gray-100">
             <Link
               href="/brands"
+              prefetch={true}
               className="flex w-full items-center justify-between py-3.5 px-5 text-sm font-bold text-gray-900 transition-colors hover:text-emerald-700 active:bg-gray-50"
               onClick={onClose}
             >
@@ -800,7 +806,7 @@ export default function Header({
 
           {/* Logo: Aligned to far left on Desktop (`md:justify-start`), Centered on Mobile */}
           <div className="flex items-center justify-center md:justify-start flex-1 md:flex-initial">
-            <Link href="/" aria-label="Classic Cosmetics home" className="flex items-center">
+            <Link href="/" prefetch={true} aria-label="Classic Cosmetics home" className="flex items-center">
               <Image
                 src="/logo.png"
                 alt="Classic Cosmetics"
@@ -847,6 +853,7 @@ export default function Header({
                   >
                     <Link
                       href={`/categories/${item.slug}`}
+                      prefetch={true}
                       className={`desktop-nav-link flex items-center gap-1.5 px-3 py-1.5 text-[13px] font-bold transition-colors whitespace-nowrap ${
                         isExpanded
                           ? "text-emerald-700 bg-emerald-50/90 rounded-md"
@@ -872,6 +879,7 @@ export default function Header({
               >
                 <Link
                   href="/brands"
+                  prefetch={true}
                   className="desktop-nav-link flex items-center gap-1.5 px-3 py-1.5 text-[13px] font-bold text-gray-800 hover:text-emerald-700 transition-colors whitespace-nowrap"
                 >
                   <span>Brands</span>
@@ -908,6 +916,7 @@ export default function Header({
                   </div>
                   <Link
                     href={`/categories/${activeMegaCategory.slug}`}
+                    prefetch={true}
                     onClick={() => setActiveMegaCategory(null)}
                     className="group inline-flex items-center gap-1 text-xs font-extrabold text-emerald-700 hover:text-emerald-800 hover:underline"
                   >
@@ -924,6 +933,7 @@ export default function Header({
                     <div key={subcat.id} className="space-y-2.5">
                       <Link
                         href={`/categories/${subcat.slug}`}
+                        prefetch={true}
                         onClick={() => setActiveMegaCategory(null)}
                         className="block text-xs font-bold uppercase tracking-wider text-gray-900 hover:text-emerald-700 transition-colors"
                       >
@@ -936,6 +946,7 @@ export default function Header({
                             <li key={child.id}>
                               <Link
                                 href={`/categories/${child.slug}`}
+                                prefetch={true}
                                 onClick={() => setActiveMegaCategory(null)}
                                 className="block text-xs text-gray-600 transition-colors hover:text-emerald-700 hover:translate-x-0.5 duration-150"
                               >

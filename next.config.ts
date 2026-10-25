@@ -50,13 +50,15 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
-  cacheComponents: true,
+  cacheComponents: false,
   partialPrefetching: false,
   poweredByHeader: false,
   productionBrowserSourceMaps: false,
   reactStrictMode: true,
   devIndicators: false,
   images: {
+    formats: ["image/avif", "image/webp"],
+    minimumCacheTTL: 86400,
     remotePatterns: storageHostname
       ? [
           {

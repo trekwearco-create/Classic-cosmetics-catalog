@@ -4,6 +4,8 @@ import { notFound } from "next/navigation";
 import ProductView from "@/components/public/ProductView";
 import { getProductBySlug } from "@/lib/data";
 
+export const revalidate = 3600;
+
 type Props = {
   params: Promise<{ slug: string }>;
 };

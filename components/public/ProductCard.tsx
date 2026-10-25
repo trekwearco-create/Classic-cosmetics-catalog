@@ -29,7 +29,7 @@ export default function ProductCard({ product }: { product: ProductCardRow }) {
   return (
     <article className="product-card card-hover">
       {/* ── Image area ── */}
-      <Link href={`/product/${product.slug}`} className="block" tabIndex={-1} aria-hidden="true">
+      <Link href={`/product/${product.slug}`} prefetch={true} className="block" tabIndex={-1} aria-hidden="true">
         <div className="product-card-image">
           {product.cover_url ? (
             <Image
@@ -77,7 +77,7 @@ export default function ProductCard({ product }: { product: ProductCardRow }) {
       </Link>
 
       {/* ── Body ── */}
-      <Link href={`/product/${product.slug}`} className="product-card-body block min-w-0">
+      <Link href={`/product/${product.slug}`} prefetch={true} className="product-card-body block min-w-0">
         {product.brand_name ? (
           <p className="clamp-1 text-[10px] uppercase tracking-wider text-emerald-800 font-medium">
             {product.brand_name}

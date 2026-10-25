@@ -1,5 +1,6 @@
-import Loader from "@/components/ui/Loader";
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
 
 export default function Loading() {
-  return <Loader text="Loading..." />;
+  return <LoadingSpinner />;
 }
+

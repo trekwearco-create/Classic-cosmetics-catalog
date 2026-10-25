@@ -44,6 +44,7 @@ export default function KoreanBeautyShowcase({
           </div>
           <Link
             href="/categories/skincare-korean-beauty"
+            prefetch={true}
             className="inline-flex items-center gap-1.5 text-xs font-bold text-pink-700 hover:text-pink-900 hover:underline sm:text-sm"
           >
             <span>View All K-Beauty</span>
@@ -57,6 +58,7 @@ export default function KoreanBeautyShowcase({
             <Link
               key={idx}
               href={item.link_url || "/categories/skincare-korean-beauty"}
+              prefetch={true}
               className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-pink-100 bg-white p-4 shadow-sm transition hover:-translate-y-1 hover:border-pink-300 hover:shadow-md"
             >
               {/* Discount Pill */}

@@ -19,6 +19,8 @@ import {
   getHomeSectionsWithBanners,
 } from "@/lib/data";
 
+export const revalidate = 1800;
+
 export const metadata: Metadata = {
   title: "Classic Cosmetics | Best Cosmetics Store in Pakistan | Authentic Beauty Products",
   description:

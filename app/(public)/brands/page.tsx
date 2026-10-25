@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+export const revalidate = 1800;
+
 export const metadata: Metadata = {
   title: "All Brands | Classic Cosmetics",
   description: "Browse 100% authentic cosmetics and skincare from verified top brands in Pakistan.",
@@ -58,7 +60,7 @@ export default async function BrandsPage() {
     <main className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 overflow-x-hidden py-6">
       {/* Breadcrumb */}
       <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-gray-500 mb-3">
-        <Link href="/" className="hover:text-emerald-700 hover:underline">
+        <Link href="/" prefetch={true} className="hover:text-emerald-700 hover:underline">
           Home
         </Link>
         <span>/</span>
@@ -106,6 +108,7 @@ export default async function BrandsPage() {
                 <Link
                   key={brand.slug}
                   href={`/brands/${brand.slug}`}
+                  prefetch={true}
                   className="group flex items-center justify-between rounded-xl border border-gray-200 bg-white p-3.5 shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-500 hover:shadow-md"
                 >
                   <span className="font-semibold text-gray-800 group-hover:text-emerald-700 text-sm">

@@ -56,6 +56,7 @@ export default function CategoryRail({
         </h2>
         <Link
           href="/categories"
+          prefetch={true}
           className="text-xs font-semibold text-emerald-700 hover:text-emerald-800 hover:underline sm:text-sm"
         >
           View all
@@ -70,6 +71,7 @@ export default function CategoryRail({
             <Link
               key={cat.id}
               href={href}
+              prefetch={true}
               className="group flex flex-col items-center gap-2 text-center flex-shrink-0 w-22 sm:w-24"
             >
               <div

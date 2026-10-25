@@ -7,6 +7,7 @@ export default function CategoryCard({ category }: { category: CategoryRow }) {
   return (
     <Link
       href={`/categories/${category.slug}`}
+      prefetch={true}
       className="flex w-full min-w-0 flex-col items-center gap-2 text-center"
     >
       <span className="relative aspect-square w-full overflow-hidden rounded-full border bg-linen" style={{ borderColor: "var(--line)" }}>

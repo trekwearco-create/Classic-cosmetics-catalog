@@ -583,15 +583,8 @@ export default function ProductView({
           </section>
         ) : null}
 
-        <div className="product-buy-bar flex flex-col gap-2.5 w-full">
-          <WhatsAppOrderButton
-            productTitle={product?.name}
-            shadeName={selectedShade ? `${selectedShade.code ? `${selectedShade.code} ` : ""}${selectedShade.name}` : undefined}
-            price={product?.price ? String(product.price) : undefined}
-            label="FOR INQUIRIES OR ORDER"
-            sublabel="CLICK ME"
-            className="w-full py-2.5 px-5 text-[11px] font-semibold tracking-[0.18em] shadow-md"
-          />
+        <div className="w-full mt-6 space-y-3">
+          {/* 1. Add to Cart on top */}
           <AddToCartButton
             product={{
               id: product?.id,
@@ -619,6 +612,16 @@ export default function ProductView({
               shadeSelectorRef.current?.focus({ preventScroll: true });
             }}
             className="btn-secondary w-full"
+          />
+
+          {/* 2. WhatsApp button below */}
+          <WhatsAppOrderButton
+            productTitle={product?.name}
+            shadeName={selectedShade ? `${selectedShade.code ? `${selectedShade.code} ` : ""}${selectedShade.name}` : undefined}
+            price={product?.price ? String(product.price) : undefined}
+            label="FOR INQUIRIES OR ORDER"
+            sublabel="CLICK ME"
+            className="w-full py-2.5 px-5 text-[11px] font-semibold tracking-[0.18em] shadow-md"
           />
         </div>
 
