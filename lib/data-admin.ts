@@ -65,8 +65,7 @@ export async function listCategoriesAdmin(): Promise<AdminCategory[]> {
   const fullRes = await supabase
     .from("categories")
     .select("id, name, slug, image_url, sort_order, parent_id, show_in_menu, show_in_homepage, is_active, description, products(count)")
-    .order("sort_order")
-    .order("name");
+    .order("name", { ascending: true });
 
   if (!fullRes.error && fullRes.data) {
     rows = fullRes.data as unknown as typeof rows;
@@ -75,8 +74,7 @@ export async function listCategoriesAdmin(): Promise<AdminCategory[]> {
     const fallbackRes = await supabase
       .from("categories")
       .select("id, name, slug, image_url, sort_order, products(count)")
-      .order("sort_order")
-      .order("name");
+      .order("name", { ascending: true });
     if (fallbackRes.error) throw new Error(fallbackRes.error.message);
     rows = (fallbackRes.data ?? []).map((r) => ({
       ...r,
@@ -189,14 +187,21 @@ export type AdminProductRow = {
 export async function listProductsAdmin(filters?: {
   q?: string;
   category?: string;
+  sort?: string;
 }): Promise<AdminProductRow[]> {
   const supabase = await supabaseServer();
+  const isSortName = filters?.sort === "name_asc" || filters?.sort === "name" || filters?.sort === "title";
   let fullQuery = supabase
     .from("products")
     .select(
       "id, name, slug, is_visible, in_stock, is_best_seller, is_korean, categories(name), product_images(image_url, is_cover, sort_order)",
-    )
-    .order("created_at", { ascending: false });
+    );
+
+  if (isSortName) {
+    fullQuery = fullQuery.order("name", { ascending: true });
+  } else {
+    fullQuery = fullQuery.order("created_at", { ascending: false });
+  }
 
   const q = filters?.q?.trim();
   if (q) {
@@ -215,8 +220,12 @@ export async function listProductsAdmin(filters?: {
       .from("products")
       .select(
         "id, name, slug, is_visible, in_stock, categories(name), product_images(image_url, is_cover, sort_order)",
-      )
-      .order("created_at", { ascending: false });
+      );
+    if (isSortName) {
+      fallbackQuery = fallbackQuery.order("name", { ascending: true });
+    } else {
+      fallbackQuery = fallbackQuery.order("created_at", { ascending: false });
+    }
     if (q) {
       fallbackQuery = fallbackQuery.ilike("name", `%${q.replace(/[\\%_]/g, (c) => `\\${c}`)}%`);
     }

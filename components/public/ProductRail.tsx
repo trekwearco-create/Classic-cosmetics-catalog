@@ -10,6 +10,7 @@ type ProductRailProps = {
   subtitle?: string;
   viewAllHref?: string;
   products: ProductCardRow[];
+  mobileLayout?: "rail" | "grid";
 };
 
 export default function ProductRail({
@@ -17,6 +18,7 @@ export default function ProductRail({
   subtitle,
   viewAllHref = "/categories",
   products,
+  mobileLayout = "rail",
 }: ProductRailProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -101,24 +103,34 @@ export default function ProductRail({
         </div>
       </div>
 
-      {/* Product Rail: Scroll snap on mobile, 4-col responsive on desktop */}
-      <div
-        ref={scrollRef}
-        className="flex gap-3 overflow-x-auto pb-4 pt-1 scroll-smooth scrollbar-none sm:gap-4 md:grid md:grid-cols-4 md:overflow-visible"
-        style={{
-          scrollSnapType: "x mandatory",
-        }}
-      >
-        {products.map((product) => (
-          <div
-            key={product.id}
-            className="w-[160px] flex-shrink-0 sm:w-[210px] md:w-auto"
-            style={{ scrollSnapAlign: "start" }}
-          >
-            <ProductCard product={product} />
-          </div>
-        ))}
-      </div>
+      {/* Product Rail: Scroll snap on mobile (Shopify rail), or clean 2-col grid */}
+      {mobileLayout === "grid" ? (
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4">
+          {products.map((product) => (
+            <div key={product.id}>
+              <ProductCard product={product} />
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div
+          ref={scrollRef}
+          className="flex gap-3 overflow-x-auto pb-4 pt-1 px-0.5 scroll-smooth scrollbar-none sm:gap-4 md:grid md:grid-cols-4 md:overflow-visible"
+          style={{
+            scrollSnapType: "x mandatory",
+          }}
+        >
+          {products.map((product) => (
+            <div
+              key={product.id}
+              className="w-[165px] flex-shrink-0 sm:w-[210px] md:w-auto"
+              style={{ scrollSnapAlign: "start" }}
+            >
+              <ProductCard product={product} />
+            </div>
+          ))}
+        </div>
+      )}
     </section>
   );
 }

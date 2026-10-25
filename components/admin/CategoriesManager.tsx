@@ -94,9 +94,9 @@ export default function CategoriesManager({
       }
     }
 
-    // Sort by sort_order then name
+    // Sort alphabetically by name (A to Z)
     const sorter = (a: AdminCategory, b: AdminCategory) =>
-      a.sort_order - b.sort_order || a.name.localeCompare(b.name);
+      a.name.localeCompare(b.name);
     rootNodes.sort(sorter);
     for (const [, list] of childrenMap.entries()) {
       list.sort(sorter);
@@ -560,8 +560,9 @@ export default function CategoriesManager({
                   className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none"
                 >
                   <option value="">None (Top-Level Category)</option>
-                  {categories
+                  {[...categories]
                     .filter((c) => !editing || c.id !== editing.id)
+                    .sort((a, b) => (a.full_path || a.name).localeCompare(b.full_path || b.name))
                     .map((c) => (
                       <option key={c.id} value={c.id}>
                         {c.full_path || c.name}

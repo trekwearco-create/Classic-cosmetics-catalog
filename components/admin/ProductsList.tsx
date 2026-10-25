@@ -74,11 +74,13 @@ export default function ProductsList({
   categories,
   query,
   categoryId,
+  sort = "",
 }: {
   products: AdminProductRow[];
   categories: { id: string; name: string }[];
   query: string;
   categoryId: string;
+  sort?: string;
 }) {
   const router = useRouter();
   const [pending, startPending] = useTransition();
@@ -106,6 +108,8 @@ export default function ProductsList({
     });
   }
 
+  const sortedCategories = [...categories].sort((a, b) => a.name.localeCompare(b.name));
+
   return (
     <div>
       <form
@@ -127,12 +131,21 @@ export default function ProductsList({
           defaultValue={categoryId}
           aria-label="Filter by category"
         >
-          <option value="">All categories</option>
-          {categories.map((c) => (
+          <option value="">All categories (A to Z)</option>
+          {sortedCategories.map((c) => (
             <option key={c.id} value={c.id}>
               {c.name}
             </option>
           ))}
+        </select>
+        <select
+          className="field max-w-[190px]"
+          name="sort"
+          defaultValue={sort}
+          aria-label="Sort products"
+        >
+          <option value="">Sort: Newest First</option>
+          <option value="name_asc">Sort: Name (A to Z)</option>
         </select>
         <button className="btn-secondary" type="submit">
           Filter

@@ -51,9 +51,9 @@ export default function FeaturedCategoriesManager({
 
   const featuredCount = Object.values(featuredMap).filter(Boolean).length;
 
-  const filtered = categories.filter((c) =>
-    c.name.toLowerCase().includes(search.toLowerCase()),
-  );
+  const filtered = categories
+    .filter((c) => c.name.toLowerCase().includes(search.toLowerCase()))
+    .sort((a, b) => a.name.localeCompare(b.name));
 
   return (
     <div className="flex flex-col gap-6">

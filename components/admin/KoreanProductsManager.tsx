@@ -63,7 +63,7 @@ export default function KoreanProductsManager({
     if (filterMode === "korean_only") return isKorean;
     if (filterMode === "non_korean") return !isKorean;
     return true;
-  });
+  }).sort((a, b) => a.name.localeCompare(b.name));
 
   return (
     <div className="flex flex-col gap-6">

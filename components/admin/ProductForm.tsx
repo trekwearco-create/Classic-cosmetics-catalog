@@ -228,12 +228,14 @@ export default function ProductForm({
               value={categoryId}
               onChange={(e) => setCategoryId(e.target.value)}
             >
-              <option value="">Choose a category</option>
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
+              <option value="">Choose a category (A to Z)</option>
+              {[...categories]
+                .sort((a, b) => a.name.localeCompare(b.name))
+                .map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
             </select>
           </label>
           <div className="flex flex-wrap items-start gap-6">

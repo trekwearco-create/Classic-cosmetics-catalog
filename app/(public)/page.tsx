@@ -6,7 +6,6 @@ import CategoryRail from "@/components/public/CategoryRail";
 import ProductRail from "@/components/public/ProductRail";
 import PromoBanners from "@/components/public/PromoBanners";
 import TrustBadges from "@/components/public/TrustBadges";
-import NewsSection from "@/components/public/NewsSection";
 import SearchBar from "@/components/public/SearchBar";
 import LoadMore from "@/components/public/LoadMore";
 import ProductCard from "@/components/public/ProductCard";
@@ -18,7 +17,7 @@ import {
   searchProductCards,
   getBestSellers,
   getKoreanProducts,
-  getLatestDrop,
+  getOurCollection,
   getHomeSectionsWithBanners,
 } from "@/lib/data";
 
@@ -105,11 +104,11 @@ export default async function HomePage({
   }
 
   // Highfy-style full Home Page Experience with database-driven sections
-  const [categories, bestSellers, koreanProducts, latestDrop, homeSections] = await Promise.all([
+  const [categories, bestSellers, koreanProducts, ourCollection, homeSections] = await Promise.all([
     listHomepageCategories(),
     getBestSellers(12),
     getKoreanProducts(12),
-    getLatestDrop(8),
+    getOurCollection(12),
     getHomeSectionsWithBanners(),
   ]);
 
@@ -177,14 +176,14 @@ export default async function HomePage({
         </div>
       )}
 
-      {/* 8. Latest Drop (New Arrivals) */}
-      {isVisible("latest_drop") && (
+      {/* 8. Our Collection (Curated / Newest Products) */}
+      {isVisible("latest_drop") && ourCollection.length > 0 && (
         <div className="mt-6 sm:mt-8">
           <ProductRail
-            title="Latest Drop"
-            subtitle="Fresh Arrivals"
+            title="Our Collection"
+            subtitle="Curated For You"
             viewAllHref="/categories"
-            products={latestDrop}
+            products={ourCollection}
           />
         </div>
       )}
@@ -193,13 +192,6 @@ export default async function HomePage({
       {isVisible("trust_icons") && (
         <div className="mt-6 sm:mt-8 px-4 sm:px-6">
           <TrustBadges />
-        </div>
-      )}
-
-      {/* 10. Latest News & Beauty Journal */}
-      {isVisible("latest_news") && (
-        <div className="mt-6 sm:mt-8">
-          <NewsSection />
         </div>
       )}
     </main>

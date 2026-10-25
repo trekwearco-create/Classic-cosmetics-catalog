@@ -535,10 +535,72 @@ export async function getKoreanProducts(limit = 8): Promise<ProductCardRow[]> {
   }
 }
 
-export async function getLatestDrop(limit = 8): Promise<ProductCardRow[]> {
-  const cards = await searchProductCards({ q: null, category: null, page: 1 });
-  return cards.slice(0, limit);
+export async function getOurCollection(limit = 12): Promise<ProductCardRow[]> {
+  try {
+    const supabase = supabasePublic();
+    const { data, error } = await supabase
+      .from("products")
+      .select("id, slug, name, in_stock, category_id, price, discount_price, created_at")
+      .eq("is_visible", true)
+      .order("created_at", { ascending: false })
+      .limit(limit);
+
+    if (error || !data || data.length === 0) {
+      const cards = await searchProductCards({ q: null, category: null, page: 1 });
+      return cards.slice(0, limit);
+    }
+
+    const ids = data.map((r: { id: string }) => r.id);
+    const [imagesRes, categoriesRes, shadesRes] = await Promise.all([
+      supabase
+        .from("product_images")
+        .select("product_id, image_url, is_cover, sort_order")
+        .in("product_id", ids)
+        .order("sort_order"),
+      supabase.from("categories").select("id, name"),
+      supabase
+        .from("product_shades")
+        .select("product_id, color_hex")
+        .in("product_id", ids)
+        .not("color_hex", "is", null),
+    ]);
+
+    const coverByProduct = new Map<string, string>();
+    const firstByProduct = new Map<string, string>();
+    for (const img of imagesRes.data ?? []) {
+      const key = img.product_id;
+      if (img.is_cover && !coverByProduct.has(key)) coverByProduct.set(key, img.image_url);
+      if (!firstByProduct.has(key)) firstByProduct.set(key, img.image_url);
+    }
+    const categoryNameById = new Map(
+      (categoriesRes.data ?? []).map((item: { id: string; name: string }) => [item.id, item.name]),
+    );
+    const shadesByProduct = new Map<string, string[]>();
+    for (const shade of shadesRes.data ?? []) {
+      if (!shade.color_hex) continue;
+      const colors = shadesByProduct.get(shade.product_id) ?? [];
+      colors.push(shade.color_hex);
+      shadesByProduct.set(shade.product_id, colors);
+    }
+
+    return (data as Array<{ id: string; slug: string; name: string; in_stock: boolean; category_id: string; price: number | null; discount_price: number | null }>).map((r) => ({
+      id: r.id,
+      slug: r.slug,
+      name: r.name,
+      in_stock: r.in_stock,
+      category_name: categoryNameById.get(r.category_id) ?? "",
+      cover_url: coverByProduct.get(r.id) ?? firstByProduct.get(r.id) ?? null,
+      shade_colors: shadesByProduct.get(r.id) ?? [],
+      price: r.price ?? null,
+      discount_price: r.discount_price ?? null,
+    }));
+  } catch {
+    log.warn("getOurCollection failed");
+    return [];
+  }
 }
+
+export const getLatestDrop = getOurCollection;
 
 export type ProductDetail = {
   id: string;

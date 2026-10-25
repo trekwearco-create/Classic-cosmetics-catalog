@@ -12,11 +12,11 @@ export const metadata: Metadata = {
 export default async function AdminProductsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; category?: string }>;
+  searchParams: Promise<{ q?: string; category?: string; sort?: string }>;
 }) {
   const sp = await searchParams;
   const [products, categories] = await Promise.all([
-    listProductsAdmin({ q: sp.q, category: sp.category }),
+    listProductsAdmin({ q: sp.q, category: sp.category, sort: sp.sort }),
     listCategoriesAdmin(),
   ]);
 
@@ -35,6 +35,7 @@ export default async function AdminProductsPage({
         categories={categories.map((c) => ({ id: c.id, name: c.name }))}
         query={sp.q ?? ""}
         categoryId={sp.category ?? ""}
+        sort={sp.sort ?? ""}
       />
     </div>
   );

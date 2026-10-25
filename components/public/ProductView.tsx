@@ -6,7 +6,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import AddToCartButton from "@/components/public/AddToCartButton";
 import MessageDialog from "@/components/public/MessageDialog";
-import StickyMobileCartBar from "@/components/product/StickyMobileCartBar";
+import ProductGallery from "@/components/product/ProductGallery";
 import WhatsAppOrderButton from "@/components/ui/WhatsAppOrderButton";
 import type { ProductDetail } from "@/lib/data";
 
@@ -57,8 +57,6 @@ export default function ProductView({
   const shadeSheetRef = useRef<HTMLDialogElement | null>(null);
   const shadeSheetCloseRef = useRef<HTMLButtonElement | null>(null);
   const selectedShadeOptionRef = useRef<HTMLButtonElement | null>(null);
-  const pointerStartRef = useRef<{ x: number; y: number } | null>(null);
-  const pointerMovedRef = useRef(false);
   const baseImage = product?.images?.[0]?.url ?? null;
   const mainImage = selectedShade?.image_url ?? baseImage;
   const galleryImages = [
@@ -210,65 +208,12 @@ export default function ProductView({
 
   return (
     <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 overflow-x-hidden">
-      <main className="product-detail-layout mt-4 pb-36 md:mt-8 md:pb-10">
-      <div className="product-gallery" aria-label={`Images of ${product.name}`}>
-        {galleryImages.length > 0 ? (
-          <div className="product-gallery-track" key={mainImage ?? "empty"}>
-            {galleryImages.map((url, index) => (
-              <div className="product-gallery-slide" key={`${url}-${index}`}>
-                <button
-                  ref={index === 0 ? triggerRef : undefined}
-                  type="button"
-                  className="product-photo-trigger"
-                  aria-label="Open photo in full screen"
-                  onPointerDown={(event) => {
-                    pointerStartRef.current = {
-                      x: event.clientX,
-                      y: event.clientY,
-                    };
-                    pointerMovedRef.current = false;
-                  }}
-                  onPointerMove={(event) => {
-                    const start = pointerStartRef.current;
-                    if (
-                      start &&
-                      (Math.abs(event.clientX - start.x) >= 8 ||
-                        Math.abs(event.clientY - start.y) >= 8)
-                    ) {
-                      pointerMovedRef.current = true;
-                    }
-                  }}
-                  onPointerCancel={() => {
-                    pointerMovedRef.current = true;
-                  }}
-                  onClick={(event) => {
-                    if (pointerMovedRef.current && event.detail !== 0) {
-                      event.preventDefault();
-                      pointerMovedRef.current = false;
-                      return;
-                    }
-                    pointerMovedRef.current = false;
-                    void openViewer(index, event.currentTarget);
-                  }}
-                >
-                  <Image
-                    src={url}
-                    alt={`${product.name}${index ? `, image ${index + 1}` : ""}`}
-                    fill
-                    priority={index === 0}
-                    loading={index === 0 ? "eager" : "lazy"}
-                    unoptimized
-                    sizes="(min-width: 768px) 55vw, 100vw"
-                    className="object-contain"
-                  />
-                </button>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="product-image-empty">No product images available</div>
-        )}
-      </div>
+      <main className="product-detail-layout mt-4 pb-12 md:mt-8 md:pb-10">
+        <ProductGallery
+          images={galleryImages}
+          productName={product.name}
+          onOpenViewer={openViewer}
+        />
 
       <div className="product-detail-copy">
         {/* Breadcrumbs */}
@@ -628,18 +573,13 @@ export default function ProductView({
           </section>
         ) : null}
 
-        {product.description ? (
-          <p className="leading-relaxed" style={{ color: "var(--ink-2)" }}>
-            {product.description}
-          </p>
-        ) : null}
-
-        <div className="product-buy-bar flex flex-col gap-2.5">
+        <div className="product-buy-bar flex flex-col gap-2.5 w-full">
           <WhatsAppOrderButton
             productTitle={product?.name}
             shadeName={selectedShade ? `${selectedShade.code ? `${selectedShade.code} ` : ""}${selectedShade.name}` : undefined}
             price={product?.price ? String(product.price) : undefined}
-            label="ORDER ON WHATSAPP"
+            label="FOR INQUIRIES OR ORDER"
+            sublabel="CLICK ME"
             className="w-full py-3.5 text-xs font-bold tracking-widest shadow-md"
           />
           <AddToCartButton
@@ -659,8 +599,8 @@ export default function ProductView({
                 }
               : null}
             inStock={product?.in_stock ?? true}
-              available={selectedShade?.is_available ?? true}
-              requiresShade={needsShade}
+            available={selectedShade?.is_available ?? true}
+            requiresShade={needsShade}
             onMissingShade={() => {
               shadeSelectorRef.current?.scrollIntoView({
                 behavior: "smooth",
@@ -671,6 +611,17 @@ export default function ProductView({
             className="btn-secondary w-full"
           />
         </div>
+
+        {product.description ? (
+          <div className="w-full pt-2 border-t border-gray-100">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-gray-900 mb-2 font-serif">
+              Product Details &amp; Description
+            </h3>
+            <p className="leading-relaxed text-sm text-gray-700 whitespace-pre-line">
+              {product.description}
+            </p>
+          </div>
+        ) : null}
       </div>
       {viewerIndex !== null && ImageViewerComponent ? (
         <ImageViewerComponent
@@ -690,18 +641,6 @@ export default function ProductView({
         onDismiss={() => setDialogMessage("")}
       />
     </main>
-    <StickyMobileCartBar
-      product={product}
-      selectedShade={selectedShade}
-      onSelectShade={chooseShade}
-      onMissingShade={() => {
-        shadeSelectorRef.current?.scrollIntoView({
-          behavior: "smooth",
-          block: "center",
-        });
-        shadeSelectorRef.current?.focus({ preventScroll: true });
-      }}
-    />
   </div>
 );
 }

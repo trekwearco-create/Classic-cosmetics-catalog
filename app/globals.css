@@ -1042,7 +1042,7 @@ img { display: block; }
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: 24px;
-  padding-bottom: calc(108px + env(safe-area-inset-bottom, 0px));
+  padding-bottom: 24px;
 }
 
 .product-gallery { min-width: 0; }
@@ -1087,14 +1087,12 @@ img { display: block; }
 }
 
 .product-buy-bar {
-  position: fixed;
-  z-index: 40;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
-  border-top: 1px solid var(--line);
-  background: var(--white);
+  position: static;
+  z-index: auto;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
 }
 
 /* ─── Shade Selector ─────────────────────────────────────────────── */

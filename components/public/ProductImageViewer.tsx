@@ -26,7 +26,6 @@ export default function ProductImageViewer({
   const [photoIndex, setPhotoIndex] = useState(initialIndex);
   const [zoomed, setZoomed] = useState(false);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
-  const [photoSize, setPhotoSize] = useState({ width: 0, height: 0 });
   const dialogRef = useRef<HTMLDialogElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
@@ -49,23 +48,6 @@ export default function ProductImageViewer({
     photoIndexRef.current = photoIndex;
   }, [photoIndex]);
 
-  const measurePhoto = useCallback(() => {
-    const photo = photoRef.current;
-    const viewport = viewportRef.current;
-    if (!photo || !viewport || !photo.naturalWidth || !photo.naturalHeight) {
-      return;
-    }
-    const bounds = viewport.getBoundingClientRect();
-    const fit = Math.min(
-      bounds.width / photo.naturalWidth,
-      bounds.height / photo.naturalHeight,
-    );
-    setPhotoSize({
-      width: photo.naturalWidth * fit,
-      height: photo.naturalHeight * fit,
-    });
-  }, []);
-
   const resetZoom = useCallback(() => {
     setZoomed(false);
     setOffset({ x: 0, y: 0 });
@@ -83,7 +65,6 @@ export default function ProductImageViewer({
     (index: number) => {
       if (index < 0 || index >= images.length) return;
       setPhotoIndex(index);
-      setPhotoSize({ width: 0, height: 0 });
       resetZoom();
     },
     [images.length, resetZoom],
@@ -153,14 +134,6 @@ export default function ProductImageViewer({
   }, [dismiss, moveTo, onClose]);
 
   useEffect(() => {
-    const viewport = viewportRef.current;
-    if (!viewport) return;
-    const observer = new ResizeObserver(measurePhoto);
-    observer.observe(viewport);
-    return () => observer.disconnect();
-  }, [measurePhoto]);
-
-  useEffect(() => {
     for (const neighbor of [photoIndex - 1, photoIndex + 1]) {
       const image = images[neighbor];
       if (!image) continue;
@@ -172,13 +145,10 @@ export default function ProductImageViewer({
   }, [images, photoIndex]);
 
   function clampOffset(x: number, y: number) {
-    const viewport = viewportRef.current?.getBoundingClientRect();
-    if (!viewport) return { x: 0, y: 0 };
-    const limitX = Math.max(0, (photoSize.width * 2.5 - viewport.width) / 2);
-    const limitY = Math.max(0, (photoSize.height * 2.5 - viewport.height) / 2);
+    const limit = 220;
     return {
-      x: Math.min(limitX, Math.max(-limitX, x)),
-      y: Math.min(limitY, Math.max(-limitY, y)),
+      x: Math.min(limit, Math.max(-limit, x)),
+      y: Math.min(limit, Math.max(-limit, y)),
     };
   }
 
@@ -348,23 +318,21 @@ export default function ProductImageViewer({
             }
           }}
         >
-          <Image
-            key={current.src}
-            ref={photoRef}
-            src={current.src}
-            alt={current.alt}
-            width={photoSize.width || 1}
-            height={photoSize.height || 1}
-            unoptimized
-            draggable={false}
-            onLoad={measurePhoto}
-            className="product-photo-viewer-image"
-            style={{
-              width: photoSize.width ? `${photoSize.width}px` : "100%",
-              height: photoSize.height ? `${photoSize.height}px` : "100%",
-              transform: `translate3d(${offset.x}px, ${offset.y}px, 0) scale(${zoomed ? 2.5 : 1})`,
-            }}
-          />
+          <div className="relative w-full max-w-lg aspect-square flex items-center justify-center overflow-hidden mx-auto">
+            <Image
+              key={current.src}
+              ref={photoRef}
+              src={current.src}
+              alt={current.alt}
+              fill
+              unoptimized
+              draggable={false}
+              className="object-contain w-full h-full"
+              style={{
+                transform: `translate3d(${offset.x}px, ${offset.y}px, 0) scale(${zoomed ? 2.5 : 1})`,
+              }}
+            />
+          </div>
         </div>
         {images.length > 1 ? (
           <button
