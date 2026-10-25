@@ -585,11 +585,11 @@ export default function ProductView({
 
         {/* Product Description (Moved Above Action Buttons) */}
         {product.description ? (
-          <div className="w-full mt-5 pt-3 border-t border-gray-100">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-gray-900 mb-2 font-serif">
+          <div className="w-full mt-5 pt-3 border-t border-gray-100 prose prose-sm text-gray-600 leading-relaxed">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-gray-900 mb-2 font-serif not-prose">
               Product Details &amp; Description
             </h3>
-            <p className="leading-relaxed text-sm text-gray-700 whitespace-pre-line">
+            <p className="whitespace-pre-line text-sm text-gray-700 leading-relaxed">
               {product.description}
             </p>
           </div>
