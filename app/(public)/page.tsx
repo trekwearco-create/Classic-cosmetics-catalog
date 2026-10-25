@@ -6,7 +6,6 @@ import CategoryRail from "@/components/public/CategoryRail";
 import ProductRail from "@/components/public/ProductRail";
 import PromoBanners from "@/components/public/PromoBanners";
 import TrustBadges from "@/components/public/TrustBadges";
-import SearchBar from "@/components/public/SearchBar";
 import LoadMore from "@/components/public/LoadMore";
 import ProductCard from "@/components/public/ProductCard";
 import KoreanBeautyShowcase from "@/components/public/KoreanBeautyShowcase";
@@ -47,8 +46,6 @@ export default async function HomePage({
 
     return (
       <main className="mt-4 flex flex-col gap-6 pb-12 md:mt-6 md:gap-8">
-        <SearchBar />
-
         <section aria-labelledby="search-products-heading">
           <div className="mb-4 flex items-end justify-between gap-3">
             <div className="min-w-0">

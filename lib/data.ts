@@ -38,6 +38,15 @@ export type ProductCardRow = {
   shade_colors: string[];
   price: number | null;
   discount_price: number | null;
+  brand_name?: string | null;
+};
+
+export type BrandRow = {
+  id: string;
+  name: string;
+  slug: string;
+  logo_url: string | null;
+  sort_order: number;
 };
 
 export type CategoryTreeNode = {
@@ -308,6 +317,7 @@ async function loadProductCards({
       slug: string;
       name: string;
       category_id: string;
+      brand_id?: string | null;
       in_stock: boolean;
       price: number | null;
       discount_price: number | null;
@@ -315,7 +325,7 @@ async function loadProductCards({
 
     if (rows.length === 0) return [];
     const ids = rows.map((r) => r.id);
-    const [imagesRes, categoriesRes, shadesRes] = await Promise.all([
+    const [imagesRes, categoriesRes, shadesRes, brandsRes] = await Promise.all([
       supabase
         .from("product_images")
         .select("product_id, image_url, is_cover, sort_order")
@@ -327,6 +337,7 @@ async function loadProductCards({
         .select("product_id, color_hex")
         .in("product_id", ids)
         .not("color_hex", "is", null),
+      supabase.from("brands").select("id, name"),
     ]);
     if (imagesRes.error) {
       log.warn("public product images query failed", {
@@ -358,6 +369,9 @@ async function loadProductCards({
     const categoryNameById = new Map(
       (categoriesRes.data ?? []).map((item) => [item.id, item.name]),
     );
+    const brandNameById = new Map(
+      (brandsRes.data ?? []).map((b: { id: string; name: string }) => [b.id, b.name]),
+    );
     const shadesByProduct = new Map<string, string[]>();
     for (const shade of shadesRes.data ?? []) {
       if (!shade.color_hex) continue;
@@ -372,6 +386,7 @@ async function loadProductCards({
       name: r.name,
       in_stock: r.in_stock,
       category_name: categoryNameById.get(r.category_id) ?? "",
+      brand_name: r.brand_id ? brandNameById.get(r.brand_id) ?? null : null,
       cover_url:
         coverByProduct.get(r.id) ?? firstByProduct.get(r.id) ?? null,
       shade_colors: shadesByProduct.get(r.id) ?? [],
@@ -612,6 +627,7 @@ export type ProductDetail = {
   in_stock: boolean;
   category_name: string;
   category_slug: string;
+  brand?: { id: string; name: string; slug: string; logo_url?: string | null } | null;
   images: Array<{ id: string; url: string }>;
   shades: Array<{
     id: string;
@@ -632,7 +648,7 @@ async function loadProductBySlug(
     const { data, error } = await supabase
       .from("products")
       .select(
-        "id, slug, name, description, price, discount_price, in_stock, category_id, categories(name, slug)",
+        "id, slug, name, description, price, discount_price, in_stock, category_id, brand_id, categories(name, slug), brands(id, name, slug, logo_url)",
       )
       .eq("slug", slug)
       .eq("is_visible", true)
@@ -648,6 +664,7 @@ async function loadProductBySlug(
       discount_price: number | null;
       in_stock: boolean;
       categories: { name: string; slug: string } | null;
+      brands: { id: string; name: string; slug: string; logo_url?: string | null } | null;
     };
 
     const [imagesRes, shadesRes] = await Promise.all([
@@ -684,6 +701,14 @@ async function loadProductBySlug(
       in_stock: Boolean(product.in_stock),
       category_name: product.categories?.name ?? "",
       category_slug: product.categories?.slug ?? "",
+      brand: product.brands
+        ? {
+            id: product.brands.id,
+            name: product.brands.name,
+            slug: product.brands.slug,
+            logo_url: product.brands.logo_url ?? null,
+          }
+        : null,
       images: imagesData
         .filter((image) => image.is_cover || !shadeImageIds.has(image.id))
         .sort((a, b) => Number(b.is_cover) - Number(a.is_cover))
@@ -704,6 +729,23 @@ async function loadProductBySlug(
   } catch (err) {
     log.warn("public product detail query caught exception", { err });
     return null;
+  }
+}
+
+export async function listBrands(): Promise<BrandRow[]> {
+  try {
+    const supabase = supabasePublic();
+    const { data, error } = await supabase
+      .from("brands")
+      .select("id, name, slug, logo_url, sort_order")
+      .order("name", { ascending: true });
+    if (error) {
+      log.warn("listBrands failed", { code: error.code });
+      return [];
+    }
+    return (data ?? []) as BrandRow[];
+  } catch {
+    return [];
   }
 }
 

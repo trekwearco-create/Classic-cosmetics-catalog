@@ -25,7 +25,35 @@ const BRANDS = [
   { letter: "V", items: ["Vaseline", "Vince Care", "Vichy", "Vanicream"] },
 ];
 
-export default function BrandsPage() {
+import { listBrands } from "@/lib/data";
+
+export default async function BrandsPage() {
+  const dbBrands = await listBrands();
+
+  const brandGroups: Array<{ letter: string; items: Array<{ name: string; slug: string }> }> =
+    dbBrands.length > 0
+      ? (() => {
+          const map = new Map<string, Array<{ name: string; slug: string }>>();
+          dbBrands.forEach((b) => {
+            const letter = (b.name[0] || "#").toUpperCase();
+            const list = map.get(letter) ?? [];
+            list.push({ name: b.name, slug: b.slug });
+            map.set(letter, list);
+          });
+          const sortedLetters = [...map.keys()].sort();
+          return sortedLetters.map((letter) => ({
+            letter,
+            items: (map.get(letter) ?? []).sort((a, b) => a.name.localeCompare(b.name)),
+          }));
+        })()
+      : BRANDS.map((g) => ({
+          letter: g.letter,
+          items: g.items.map((name) => ({
+            name,
+            slug: name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+          })),
+        }));
+
   return (
     <main className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 overflow-x-hidden py-6">
       {/* Breadcrumb */}
@@ -55,7 +83,7 @@ export default function BrandsPage() {
 
       {/* Alphabet Quick Nav */}
       <div className="mb-8 flex flex-wrap gap-1.5 rounded-xl border border-gray-100 bg-gray-50/80 p-3">
-        {BRANDS.map((group) => (
+        {brandGroups.map((group) => (
           <a
             key={group.letter}
             href={`#brand-group-${group.letter}`}
@@ -68,7 +96,7 @@ export default function BrandsPage() {
 
       {/* Brands Alphabetical Grid */}
       <div className="space-y-8">
-        {BRANDS.map((group) => (
+        {brandGroups.map((group) => (
           <div key={group.letter} id={`brand-group-${group.letter}`} className="scroll-mt-20">
             <h2 className="mb-3 border-b border-gray-200 pb-2 text-xl font-extrabold text-gray-900">
               {group.letter}
@@ -76,12 +104,12 @@ export default function BrandsPage() {
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
               {group.items.map((brand) => (
                 <Link
-                  key={brand}
-                  href={`/?q=${encodeURIComponent(brand)}`}
+                  key={brand.slug}
+                  href={`/brands/${brand.slug}`}
                   className="group flex items-center justify-between rounded-xl border border-gray-200 bg-white p-3.5 shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-500 hover:shadow-md"
                 >
                   <span className="font-semibold text-gray-800 group-hover:text-emerald-700 text-sm">
-                    {brand}
+                    {brand.name}
                   </span>
                   <span className="text-gray-300 group-hover:text-emerald-600 text-xs">
                     &rarr;

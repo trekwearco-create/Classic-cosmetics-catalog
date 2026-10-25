@@ -277,6 +277,7 @@ export type AdminProduct = {
   is_visible: boolean;
   in_stock: boolean;
   category_id: string;
+  brand_id?: string | null;
   images: Array<{ id: string; url: string; storage_path: string; is_cover: boolean }>;
   shades: Array<{
     id: string;
@@ -296,7 +297,7 @@ export async function getProductAdmin(
   const { data, error } = await supabase
     .from("products")
     .select(
-      "id, name, slug, description, price, discount_price, is_visible, in_stock, category_id",
+      "id, name, slug, description, price, discount_price, is_visible, in_stock, category_id, brand_id",
     )
     .eq("id", id)
     .maybeSingle();
@@ -312,6 +313,7 @@ export async function getProductAdmin(
     is_visible: boolean;
     in_stock: boolean;
     category_id: string;
+    brand_id?: string | null;
   };
 
   const [imagesRes, shadesRes] = await Promise.all([
@@ -350,6 +352,7 @@ export async function getProductAdmin(
     is_visible: product.is_visible,
     in_stock: product.in_stock,
     category_id: product.category_id,
+    brand_id: product.brand_id ?? null,
     images: (imagesRes.data ?? [])
       .filter((image) => !shadeImageIds.has(image.id))
       .map((i) => ({
@@ -369,3 +372,55 @@ export async function getProductAdmin(
     })),
   };
 }
+
+export type AdminBrand = {
+  id: string;
+  name: string;
+  slug: string;
+  logo_url: string | null;
+  sort_order: number;
+  product_count: number;
+  created_at: string;
+};
+
+export async function listBrandsAdmin(): Promise<AdminBrand[]> {
+  const supabase = await supabaseServer();
+  const { data, error } = await supabase
+    .from("brands")
+    .select("id, name, slug, logo_url, sort_order, created_at, products(id)")
+    .order("name", { ascending: true });
+
+  if (error) {
+    const simple = await supabase
+      .from("brands")
+      .select("id, name, slug, logo_url, sort_order, created_at")
+      .order("name", { ascending: true });
+    if (simple.error) return [];
+    return (simple.data ?? []).map((b) => ({
+      ...b,
+      product_count: 0,
+    }));
+  }
+
+  return (data ?? []).map((b) => {
+    const row = b as unknown as {
+      id: string;
+      name: string;
+      slug: string;
+      logo_url: string | null;
+      sort_order: number;
+      created_at: string;
+      products?: { id: string }[] | null;
+    };
+    return {
+      id: row.id,
+      name: row.name,
+      slug: row.slug,
+      logo_url: row.logo_url,
+      sort_order: row.sort_order,
+      created_at: row.created_at,
+      product_count: row.products ? row.products.length : 0,
+    };
+  });
+}
+

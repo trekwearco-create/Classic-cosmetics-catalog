@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import ProductCard from "@/components/public/ProductCard";
-import { searchProductCards } from "@/lib/data";
+import { searchProductCards, listBrands } from "@/lib/data";
 
 export async function generateMetadata({
   params,
@@ -11,7 +11,9 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const brandName = decodeURIComponent(slug).replace(/-/g, " ");
+  const dbBrands = await listBrands();
+  const found = dbBrands.find((b) => b.slug.toLowerCase() === slug.toLowerCase());
+  const brandName = found ? found.name : decodeURIComponent(slug).replace(/-/g, " ");
   const capitalized = brandName.replace(/\b\w/g, (c) => c.toUpperCase());
   return {
     title: `${capitalized} Products | Classic Cosmetics`,
@@ -27,8 +29,10 @@ export default async function BrandProductsPage({
   const { slug } = await params;
   if (!slug) notFound();
 
-  const brandQuery = decodeURIComponent(slug).replace(/-/g, " ");
-  const brandDisplayName = brandQuery.replace(/\b\w/g, (c) => c.toUpperCase());
+  const dbBrands = await listBrands();
+  const found = dbBrands.find((b) => b.slug.toLowerCase() === slug.toLowerCase());
+  const brandQuery = found ? found.name : decodeURIComponent(slug).replace(/-/g, " ");
+  const brandDisplayName = found ? found.name : brandQuery.replace(/\b\w/g, (c) => c.toUpperCase());
   const products = await searchProductCards({ q: brandQuery, category: null, page: 1 });
 
   return (

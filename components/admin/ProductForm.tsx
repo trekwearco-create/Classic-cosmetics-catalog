@@ -12,6 +12,7 @@ import {
 import { notifyCatalogChanged } from "@/lib/catalog-sync";
 
 type CategoryOption = { id: string; name: string; parent_id?: string | null };
+type BrandOption = { id: string; name: string };
 
 export type ProductFormInitial = {
   id: string;
@@ -23,16 +24,19 @@ export type ProductFormInitial = {
   is_visible: boolean;
   in_stock: boolean;
   category_id: string;
+  brand_id?: string | null;
   images: UploadItem[];
   shades: ShadeRow[];
 };
 
 export default function ProductForm({
   categories,
+  brands = [],
   initial,
   isNew,
 }: {
   categories: CategoryOption[];
+  brands?: BrandOption[];
   initial: ProductFormInitial;
   isNew: boolean;
 }) {
@@ -42,6 +46,7 @@ export default function ProductForm({
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   const [name, setName] = useState(initial.name);
+  const [selectedBrandId, setSelectedBrandId] = useState(initial.brand_id ?? "");
 
   // Initialize 3-tier cascading category selector
   const [level1Id, setLevel1Id] = useState<string>(() => {
@@ -227,6 +232,7 @@ export default function ProductForm({
         id: initial.id,
         name: name.trim(),
         category_id: categoryId,
+        brand_id: selectedBrandId || null,
         description: description.trim() === "" ? null : description.trim(),
         price: price.trim() === "" ? null : Number(price),
         discount_price: discountPrice.trim() === "" ? null : Number(discountPrice),
@@ -363,6 +369,19 @@ export default function ProductForm({
                 </select>
               </label>
             )}
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-gray-700 mb-1">Brand</label>
+            <select
+              value={selectedBrandId}
+              onChange={(e) => setSelectedBrandId(e.target.value)}
+              className="w-full rounded-lg border border-gray-200 p-2.5 text-xs focus:border-[#0C3B25] focus:outline-none"
+            >
+              <option value="">Select Brand (Optional)</option>
+              {brands.map((b) => (
+                <option key={b.id} value={b.id}>{b.name}</option>
+              ))}
+            </select>
           </div>
           <div className="flex flex-wrap items-start gap-6">
             <label className="flex items-center gap-2 text-sm font-semibold">

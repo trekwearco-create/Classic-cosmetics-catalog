@@ -15,7 +15,7 @@ export default async function CategoriesPage() {
   const categories = rootCategories.length > 0 ? rootCategories : allCategories;
 
   return (
-    <main className="mt-4 pb-14 sm:mt-6">
+    <main className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 overflow-x-hidden">
       {/* Breadcrumbs */}
       <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-gray-500 mb-3">
         <Link href="/" className="hover:text-emerald-700 hover:underline">
@@ -47,7 +47,7 @@ export default async function CategoriesPage() {
       </div>
 
       {categories.length > 0 ? (
-        <div className="grid grid-cols-3 gap-x-4 gap-y-8 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-6">
           {categories.map((category) => (
             <CategoryCard key={category.id} category={category} />
           ))}

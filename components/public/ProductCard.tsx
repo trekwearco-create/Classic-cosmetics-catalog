@@ -78,7 +78,13 @@ export default function ProductCard({ product }: { product: ProductCardRow }) {
 
       {/* ── Body ── */}
       <Link href={`/product/${product.slug}`} className="product-card-body block min-w-0">
-        <p className="clamp-1 text-label">{product.category_name}</p>
+        {product.brand_name ? (
+          <p className="clamp-1 text-[10px] uppercase tracking-wider text-emerald-800 font-medium">
+            {product.brand_name}
+          </p>
+        ) : (
+          <p className="clamp-1 text-label">{product.category_name}</p>
+        )}
         <h3 className="clamp-2 mt-1 text-[13px] font-semibold leading-snug md:text-[14px]">
           {product.name}
         </h3>

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import ProductForm from "@/components/admin/ProductForm";
-import { getProductAdmin, listCategoriesAdmin } from "@/lib/data-admin";
+import { getProductAdmin, listCategoriesAdmin, listBrandsAdmin } from "@/lib/data-admin";
 
 export const metadata: Metadata = {
   title: "Edit product",
@@ -18,9 +18,10 @@ export default async function EditProductPage({
   const { id } = await params;
   if (!/^[0-9a-fA-F-]{36}$/.test(id)) notFound();
 
-  const [product, categories] = await Promise.all([
+  const [product, categories, brands] = await Promise.all([
     getProductAdmin(id),
     listCategoriesAdmin(),
+    listBrandsAdmin(),
   ]);
   if (!product) notFound();
 
@@ -34,6 +35,7 @@ export default async function EditProductPage({
       </p>
       <ProductForm
         categories={categories.map((c) => ({ id: c.id, name: c.name, parent_id: c.parent_id ?? null }))}
+        brands={brands.map((b) => ({ id: b.id, name: b.name }))}
         isNew={false}
         initial={{
           id: product.id,
@@ -45,6 +47,7 @@ export default async function EditProductPage({
           is_visible: product.is_visible,
           in_stock: product.in_stock,
           category_id: product.category_id,
+          brand_id: product.brand_id ?? "",
           images: product.images.map((img) => ({
             key: img.id,
             url: img.url,

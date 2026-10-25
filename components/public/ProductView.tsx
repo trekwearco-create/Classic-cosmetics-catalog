@@ -241,9 +241,19 @@ export default function ProductView({
         <div className="w-full min-w-0">
           {/* Brand & Stock Pill */}
           <div className="flex items-center justify-between gap-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-full">
-              {product.category_name}
-            </span>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs font-bold uppercase tracking-wider text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-full">
+                {product.category_name}
+              </span>
+              {product.brand && (
+                <Link
+                  className="text-xs uppercase tracking-widest text-[#0C3B25] font-semibold hover:underline"
+                  href={`/brands/${product.brand.slug}`}
+                >
+                  {product.brand.name}
+                </Link>
+              )}
+            </div>
             <span
               className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full ${
                 product.in_stock
@@ -580,7 +590,7 @@ export default function ProductView({
             price={product?.price ? String(product.price) : undefined}
             label="FOR INQUIRIES OR ORDER"
             sublabel="CLICK ME"
-            className="w-full py-3.5 text-xs font-bold tracking-widest shadow-md"
+            className="w-full py-2.5 px-5 text-[11px] font-semibold tracking-[0.18em] shadow-md"
           />
           <AddToCartButton
             product={{

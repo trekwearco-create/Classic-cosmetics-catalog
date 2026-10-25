@@ -145,12 +145,12 @@ export default function AddToCartButton({
     <>
       <button
         type="button"
-        className={`group relative inline-flex items-center justify-center overflow-hidden rounded-full border border-[#0c3b25] px-8 py-3.5 text-xs font-semibold uppercase tracking-[0.22em] transition-all duration-300 ease-out ${
+        className={`group relative inline-flex items-center justify-center overflow-hidden rounded-full border border-[#0c3b25] px-8 py-3.5 text-xs font-semibold uppercase tracking-[0.22em] transition-all duration-300 ease-out hover:shadow-md active:scale-95 ${
           loading
             ? "bg-white text-transparent cursor-not-allowed shadow-none"
             : ariaDisabled
             ? "opacity-60 cursor-not-allowed bg-gray-200 text-gray-500 border-gray-300"
-            : "bg-[#0c3b25] text-white hover:bg-white hover:text-[#0c3b25] shadow-sm active:scale-[0.98]"
+            : "bg-[#0c3b25] text-white hover:bg-white hover:text-[#0c3b25] shadow-sm hover:shadow-md active:scale-95 transition-transform duration-150"
         } ${className}`}
         aria-disabled={ariaDisabled}
         onClick={handleClick}

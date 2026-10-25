@@ -62,7 +62,7 @@ export default function WhatsAppOrderButton({
     <button
       onClick={handleOrder}
       type="button"
-      className={`group relative inline-flex items-center justify-center overflow-hidden rounded-full border border-emerald-600 bg-gradient-to-r from-[#0C3B25] via-[#155d3a] to-[#0C3B25] px-6 py-3.5 text-xs font-bold uppercase tracking-[0.18em] text-white shadow-md transition-all duration-300 hover:shadow-emerald-900/40 hover:scale-[1.01] active:scale-[0.98] ${className}`}
+      className={`group relative inline-flex items-center justify-center overflow-hidden rounded-full border border-emerald-600 bg-gradient-to-r from-[#0C3B25] via-[#155d3a] to-[#0C3B25] py-2.5 px-5 text-[11px] tracking-[0.18em] font-semibold uppercase text-white shadow-md transition-all duration-300 hover:shadow-emerald-900/40 hover:scale-[1.01] active:scale-[0.98] ${className}`}
     >
       {/* Animated shimmer sweep */}
       <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 ease-in-out group-hover:translate-x-full"></span>
@@ -79,7 +79,7 @@ export default function WhatsAppOrderButton({
           <span>{buttonText}</span>
         </span>
         {sublabel ? (
-          <span className="text-[10px] font-sans font-light tracking-[0.2em] text-emerald-200/90 mt-0.5">
+          <span className="text-[9px] opacity-80 mt-0.5 font-sans font-light tracking-[0.2em] text-emerald-200/90">
             {sublabel}
           </span>
         ) : null}
