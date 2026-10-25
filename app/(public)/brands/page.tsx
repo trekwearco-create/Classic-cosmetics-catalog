@@ -27,7 +27,7 @@ const BRANDS = [
 
 export default function BrandsPage() {
   return (
-    <main className="mt-4 pb-14 sm:mt-6">
+    <main className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 overflow-x-hidden py-6">
       {/* Breadcrumb */}
       <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-gray-500 mb-3">
         <Link href="/" className="hover:text-emerald-700 hover:underline">
@@ -73,7 +73,7 @@ export default function BrandsPage() {
             <h2 className="mb-3 border-b border-gray-200 pb-2 text-xl font-extrabold text-gray-900">
               {group.letter}
             </h2>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
               {group.items.map((brand) => (
                 <Link
                   key={brand}

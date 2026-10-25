@@ -16,7 +16,7 @@ export default async function NewProductPage() {
         Add product
       </h1>
       <ProductForm
-        categories={categories.map((c) => ({ id: c.id, name: c.full_path || c.name }))}
+        categories={categories.map((c) => ({ id: c.id, name: c.name, parent_id: c.parent_id ?? null }))}
         isNew
         initial={{
           id: crypto.randomUUID(),

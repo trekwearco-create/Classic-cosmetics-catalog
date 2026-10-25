@@ -39,6 +39,21 @@ function safeSlug(raw: string): string {
   return slugify(raw);
 }
 
+function revalidateCategoryLiveStorefront() {
+  try {
+    updateTag("public-catalog");
+  } catch {}
+  revalidatePath("/", "layout"); // Revalidates whole storefront immediately
+  revalidatePath("/(public)", "page");
+  revalidatePath("/shop");
+  revalidatePath("/categories/[...slug]", "page");
+  revalidatePath("/");
+  revalidatePath("/admin/categories");
+  revalidatePath("/admin/featured-categories");
+  revalidatePath("/categories");
+  revalidatePath("/categories/[slug]", "page");
+}
+
 function isPublicImageUrl(value: string): boolean {
   try {
     const url = new URL(value);
@@ -191,11 +206,7 @@ export async function saveCategoryAction(
     }
   }
 
-  updateTag("public-catalog");
-  revalidatePath("/admin/categories");
-  revalidatePath("/");
-  revalidatePath("/categories");
-  revalidatePath("/categories/[slug]", "page");
+  revalidateCategoryLiveStorefront();
   return { success: "Category saved" };
 }
 
@@ -271,11 +282,7 @@ export async function deleteCategoryAction(
     }
   }
 
-  updateTag("public-catalog");
-  revalidatePath("/admin/categories");
-  revalidatePath("/");
-  revalidatePath("/categories");
-  revalidatePath("/categories/[slug]", "page");
+  revalidateCategoryLiveStorefront();
   return { success: "Category deleted" };
 }
 
@@ -302,11 +309,7 @@ export async function fastUpdateCategoryAction(
     return { success: false, error: "Update failed" };
   }
 
-  updateTag("public-catalog");
-  revalidatePath("/");
-  revalidatePath("/admin/categories");
-  revalidatePath("/admin/featured-categories");
-  revalidatePath("/categories");
+  revalidateCategoryLiveStorefront();
   return { success: true };
 }
 
@@ -328,9 +331,6 @@ export async function updateFeaturedCategoriesAction(
     }
   }
 
-  updateTag("public-catalog");
-  revalidatePath("/");
-  revalidatePath("/admin/featured-categories");
-  revalidatePath("/admin/categories");
+  revalidateCategoryLiveStorefront();
   return { success: true };
 }

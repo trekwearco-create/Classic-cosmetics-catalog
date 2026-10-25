@@ -10,6 +10,19 @@ import { limitAction } from "@/lib/ratelimit";
 import { isSameOriginRequest } from "@/lib/request-security";
 import { isAdmin, supabaseServer } from "@/lib/supabase/server";
 
+function revalidateBannerLiveStorefront() {
+  try {
+    updateTag("public-banners");
+    updateTag("public-catalog");
+  } catch {}
+  revalidatePath("/", "layout"); // Revalidates whole storefront immediately
+  revalidatePath("/(public)", "page");
+  revalidatePath("/shop");
+  revalidatePath("/categories/[...slug]", "page");
+  revalidatePath("/");
+  revalidatePath("/admin/banners");
+}
+
 export type BannerFormState = {
   error?: string;
   success?: string;
@@ -85,11 +98,7 @@ export async function saveBannerAction(
     return { error: "Could not save banner. Make sure database migration 006 is applied." };
   }
 
-  try {
-    updateTag("public-banners");
-  } catch {}
-  revalidatePath("/");
-  revalidatePath("/admin/banners");
+  revalidateBannerLiveStorefront();
   return { success: "Banner saved successfully" };
 }
 
@@ -110,11 +119,7 @@ export async function deleteBannerAction(
     return { error: "Could not delete banner." };
   }
 
-  try {
-    updateTag("public-banners");
-  } catch {}
-  revalidatePath("/");
-  revalidatePath("/admin/banners");
+  revalidateBannerLiveStorefront();
   return { success: "Banner deleted" };
 }
 
@@ -129,10 +134,6 @@ export async function updateSectionAction(
   const { error } = await supabase.from("home_sections").update(updates).eq("key", key);
   if (error) return { error: error.message };
 
-  try {
-    updateTag("public-banners");
-  } catch {}
-  revalidatePath("/");
-  revalidatePath("/admin/banners");
+  revalidateBannerLiveStorefront();
   return { success: true };
 }

@@ -70,14 +70,12 @@ export default function CategoryRail({
             <Link
               key={cat.id}
               href={href}
-              className="group flex flex-col items-center gap-2 text-center flex-shrink-0"
-              style={{ width: "72px" }}
+              className="group flex flex-col items-center gap-2 text-center flex-shrink-0 w-22 sm:w-24"
             >
               <div
-                className="relative flex h-16 w-16 items-center justify-center rounded-full border-2 transition-transform duration-200 group-hover:scale-105 group-hover:shadow-md sm:h-20 sm:w-20"
+                className="relative flex h-22 w-22 sm:h-24 sm:w-24 items-center justify-center rounded-full overflow-hidden border-2 border-emerald-100 shadow-sm transition-all duration-300 group-hover:shadow-md group-hover:border-emerald-300"
                 style={{
                   backgroundColor: cat.bg,
-                  borderColor: cat.border,
                 }}
               >
                 {cat.image_url ? (
@@ -86,11 +84,11 @@ export default function CategoryRail({
                     alt={cat.name}
                     fill
                     unoptimized
-                    sizes="80px"
-                    className="rounded-full object-cover"
+                    sizes="96px"
+                    className="object-cover scale-110 transition-transform duration-300 group-hover:scale-125"
                   />
                 ) : (
-                  <span className="text-2xl sm:text-3xl select-none" aria-hidden="true">
+                  <span className="text-3xl sm:text-4xl select-none" aria-hidden="true">
                     {cat.emoji}
                   </span>
                 )}

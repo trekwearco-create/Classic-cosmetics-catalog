@@ -15,7 +15,6 @@ import {
   listHomepageCategories,
   PAGE_SIZE,
   searchProductCards,
-  getBestSellers,
   getKoreanProducts,
   getOurCollection,
   getHomeSectionsWithBanners,
@@ -104,9 +103,8 @@ export default async function HomePage({
   }
 
   // Highfy-style full Home Page Experience with database-driven sections
-  const [categories, bestSellers, koreanProducts, ourCollection, homeSections] = await Promise.all([
+  const [categories, koreanProducts, ourCollection, homeSections] = await Promise.all([
     listHomepageCategories(),
-    getBestSellers(12),
     getKoreanProducts(12),
     getOurCollection(12),
     getHomeSectionsWithBanners(),
@@ -128,18 +126,6 @@ export default async function HomePage({
       {isVisible("category_icons") && (
         <div className="mt-6 sm:mt-8">
           <CategoryRail categories={categories} />
-        </div>
-      )}
-
-      {/* 4. Best Sellers Rail — curated via admin is_best_seller flag */}
-      {isVisible("best_sellers") && bestSellers.length > 0 && (
-        <div className="mt-6 sm:mt-8">
-          <ProductRail
-            title="Best Sellers"
-            subtitle="Customer Favorites"
-            viewAllHref="/categories"
-            products={bestSellers}
-          />
         </div>
       )}
 
@@ -190,7 +176,7 @@ export default async function HomePage({
 
       {/* 9. Trust Guarantees */}
       {isVisible("trust_icons") && (
-        <div className="mt-6 sm:mt-8 px-4 sm:px-6">
+        <div className="mt-4 sm:mt-6 w-full">
           <TrustBadges />
         </div>
       )}

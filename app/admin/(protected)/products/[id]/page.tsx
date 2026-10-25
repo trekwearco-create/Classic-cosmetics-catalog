@@ -33,7 +33,7 @@ export default async function EditProductPage({
         Public page: <Link href={`/product/${product.slug}`}>/product/{product.slug}</Link>
       </p>
       <ProductForm
-        categories={categories.map((c) => ({ id: c.id, name: c.full_path || c.name }))}
+        categories={categories.map((c) => ({ id: c.id, name: c.name, parent_id: c.parent_id ?? null }))}
         isNew={false}
         initial={{
           id: product.id,

@@ -47,14 +47,28 @@ export type ProductFormState = { error?: string; slug?: string };
 export type ShadeInput = z.input<typeof shadeSchema>;
 export type ImageInput = z.input<typeof imageRowSchema>;
 
-async function revalidateProduct(slug: string, oldSlug?: string) {
-  updateTag("public-catalog");
+function revalidateLiveStorefront(slug?: string, oldSlug?: string) {
+  try {
+    updateTag("public-catalog");
+  } catch {}
+  revalidatePath("/", "layout"); // Revalidates whole storefront immediately
+  revalidatePath("/(public)", "page");
+  revalidatePath("/shop");
+  revalidatePath("/categories/[...slug]", "page");
   revalidatePath("/");
   revalidatePath("/admin/products");
-  revalidatePath(`/product/${slug}`);
   revalidatePath("/categories");
   revalidatePath("/categories/[slug]", "page");
-  if (oldSlug && oldSlug !== slug) revalidatePath(`/product/${oldSlug}`);
+  if (slug) {
+    revalidatePath(`/product/${slug}`);
+  }
+  if (oldSlug && oldSlug !== slug) {
+    revalidatePath(`/product/${oldSlug}`);
+  }
+}
+
+async function revalidateProduct(slug: string, oldSlug?: string) {
+  revalidateLiveStorefront(slug, oldSlug);
 }
 
 function imageBelongsToPath(image: ImageInput, productId: string): boolean {
@@ -383,12 +397,7 @@ export async function deleteProductAction(
       .remove(paths);
     if (rmError) log.warn("product storage cleanup failed", { code: rmError.name });
   }
-  updateTag("public-catalog");
-  revalidatePath("/");
-  revalidatePath(`/product/${slug}`);
-  revalidatePath("/categories");
-  revalidatePath("/categories/[slug]", "page");
-  revalidatePath("/admin/products");
+  revalidateLiveStorefront(slug);
   return { slug: "/admin/products" };
 }
 
@@ -581,9 +590,7 @@ export async function toggleProductCurationAction(
     return { error: "Something went wrong. Please try again." };
   }
 
-  updateTag("public-catalog");
-  revalidatePath("/");
-  revalidatePath("/admin/products");
+  revalidateLiveStorefront();
   revalidatePath("/admin/korean-products");
   return {};
 }
@@ -604,10 +611,8 @@ export async function updateKoreanProductsAction(
     }
   }
 
-  updateTag("public-catalog");
-  revalidatePath("/");
+  revalidateLiveStorefront();
   revalidatePath("/admin/korean-products");
-  revalidatePath("/admin/products");
   return { success: true };
 }
 
@@ -653,10 +658,6 @@ export async function deleteImageAction(
       .remove([img.storage_path]);
     if (error) log.warn("product image cleanup failed", { code: error.name });
   }
-  updateTag("public-catalog");
-  revalidatePath("/");
-  revalidatePath(`/product/${product.slug}`);
-  revalidatePath("/categories/[slug]", "page");
-  revalidatePath("/admin/products");
+  revalidateLiveStorefront(product.slug);
   return { slug: "/admin/products" };
 }

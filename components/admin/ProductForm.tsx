@@ -11,7 +11,7 @@ import {
 } from "@/lib/actions/products";
 import { notifyCatalogChanged } from "@/lib/catalog-sync";
 
-type CategoryOption = { id: string; name: string };
+type CategoryOption = { id: string; name: string; parent_id?: string | null };
 
 export type ProductFormInitial = {
   id: string;
@@ -42,15 +42,95 @@ export default function ProductForm({
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   const [name, setName] = useState(initial.name);
+
+  // Initialize 3-tier cascading category selector
+  const [level1Id, setLevel1Id] = useState<string>(() => {
+    if (!initial.category_id) return "";
+    const current = categories.find((c) => c.id === initial.category_id);
+    if (!current) return "";
+    if (!current.parent_id) return current.id;
+    const parent = categories.find((c) => c.id === current.parent_id);
+    if (!parent) return current.id;
+    const grandParent = parent.parent_id ? categories.find((c) => c.id === parent.parent_id) : null;
+    return grandParent ? grandParent.id : parent.id;
+  });
+
+  const [level2Id, setLevel2Id] = useState<string>(() => {
+    if (!initial.category_id) return "";
+    const current = categories.find((c) => c.id === initial.category_id);
+    if (!current || !current.parent_id) return "";
+    const parent = categories.find((c) => c.id === current.parent_id);
+    if (!parent) return "";
+    const grandParent = parent.parent_id ? categories.find((c) => c.id === parent.parent_id) : null;
+    return grandParent ? parent.id : current.id;
+  });
+
+  const [level3Id, setLevel3Id] = useState<string>(() => {
+    if (!initial.category_id) return "";
+    const current = categories.find((c) => c.id === initial.category_id);
+    if (!current || !current.parent_id) return "";
+    const parent = categories.find((c) => c.id === current.parent_id);
+    if (!parent) return "";
+    const grandParent = parent.parent_id ? categories.find((c) => c.id === parent.parent_id) : null;
+    return grandParent ? current.id : "";
+  });
+
   const [categoryId, setCategoryId] = useState(initial.category_id);
+
+  const level1Options = useMemo(
+    () =>
+      categories
+        .filter((c) => !c.parent_id)
+        .sort((a, b) => a.name.localeCompare(b.name)),
+    [categories],
+  );
+
+  const level2Options = useMemo(
+    () =>
+      level1Id
+        ? categories
+            .filter((c) => c.parent_id === level1Id)
+            .sort((a, b) => a.name.localeCompare(b.name))
+        : [],
+    [categories, level1Id],
+  );
+
+  const level3Options = useMemo(
+    () =>
+      level2Id
+        ? categories
+            .filter((c) => c.parent_id === level2Id)
+            .sort((a, b) => a.name.localeCompare(b.name))
+        : [],
+    [categories, level2Id],
+  );
+
+  function handleLevel1Change(id: string) {
+    setLevel1Id(id);
+    setLevel2Id("");
+    setLevel3Id("");
+    setCategoryId(id);
+  }
+
+  function handleLevel2Change(id: string) {
+    setLevel2Id(id);
+    setLevel3Id("");
+    setCategoryId(id || level1Id);
+  }
+
+  function handleLevel3Change(id: string) {
+    setLevel3Id(id);
+    setCategoryId(id || level2Id || level1Id);
+  }
+
   const [description, setDescription] = useState(initial.description);
   const [price, setPrice] = useState<string>(
-    initial.price !== null && initial.price !== undefined ? String(initial.price) : ""
+    initial.price !== null && initial.price !== undefined ? String(initial.price) : "",
   );
   const [discountPrice, setDiscountPrice] = useState<string>(
     initial.discount_price !== null && initial.discount_price !== undefined
       ? String(initial.discount_price)
-      : ""
+      : "",
   );
   const [isVisible, setIsVisible] = useState(initial.is_visible);
   const [inStock, setInStock] = useState(initial.in_stock);
@@ -221,23 +301,69 @@ export default function ProductForm({
               maxLength={120}
             />
           </label>
-          <label className="flex flex-col gap-1 text-sm font-semibold">
-            Category
-            <select
-              className="field"
-              value={categoryId}
-              onChange={(e) => setCategoryId(e.target.value)}
-            >
-              <option value="">Choose a category (A to Z)</option>
-              {[...categories]
-                .sort((a, b) => a.name.localeCompare(b.name))
-                .map((c) => (
+          <div className="flex flex-col gap-3">
+            <label className="flex flex-col gap-1 text-sm font-semibold">
+              Main Category (Level 1)
+              <select
+                className="field"
+                value={level1Id}
+                onChange={(e) => handleLevel1Change(e.target.value)}
+              >
+                <option value="">Choose Main Category (A to Z)</option>
+                {level1Options.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.name}
                   </option>
                 ))}
-            </select>
-          </label>
+              </select>
+            </label>
+
+            {level1Id !== "" && (
+              <label className="flex flex-col gap-1 text-sm font-semibold">
+                Sub-Category (Level 2)
+                <select
+                  className="field"
+                  value={level2Id}
+                  disabled={level2Options.length === 0}
+                  onChange={(e) => handleLevel2Change(e.target.value)}
+                >
+                  <option value="">
+                    {level2Options.length === 0
+                      ? "None (No sub-categories available)"
+                      : "Choose Sub-Category (Optional)"}
+                  </option>
+                  {level2Options.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+
+            {level2Id !== "" && (
+              <label className="flex flex-col gap-1 text-sm font-semibold">
+                Sub-Sub-Category (Level 3)
+                <select
+                  className="field"
+                  value={level3Id}
+                  disabled={level3Options.length === 0}
+                  onChange={(e) => handleLevel3Change(e.target.value)}
+                >
+                  <option value="">
+                    {level3Options.length === 0
+                      ? "None (No sub-sub-categories available)"
+                      : "Choose Sub-Sub-Category (Optional)"}
+                  </option>
+                  {level3Options.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+          </div>
           <div className="flex flex-wrap items-start gap-6">
             <label className="flex items-center gap-2 text-sm font-semibold">
               <input
