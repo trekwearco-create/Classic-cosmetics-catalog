@@ -45,21 +45,21 @@ export default function CategoryImageUploader({
   }
 
   return (
-    <div className="flex flex-col gap-2">
-      <span className="text-sm font-semibold">Category image</span>
-      <div className="flex items-center gap-3">
-        <div className="relative h-20 w-20 overflow-hidden rounded-full border bg-linen" style={{ borderColor: "var(--line)" }}>
+    <div className="flex flex-col gap-2 w-full max-w-full box-border">
+      <span className="text-xs font-bold text-gray-700 uppercase tracking-wider">Category image</span>
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="relative h-16 w-16 sm:h-20 sm:w-20 shrink-0 overflow-hidden rounded-full border bg-linen box-border" style={{ borderColor: "var(--line)" }}>
           {imageUrl ? (
             <Image src={imageUrl} alt="Category preview" fill unoptimized sizes="80px" className="object-cover" />
           ) : (
-            <span className="grid h-full place-items-center px-2 text-center text-xs" style={{ color: "var(--ink-2)" }}>
+            <span className="grid h-full place-items-center px-2 text-center text-[10px] sm:text-xs" style={{ color: "var(--ink-2)" }}>
               No image
             </span>
           )}
         </div>
         <div className="flex flex-wrap gap-2">
           <button
-            className="btn-secondary !min-h-11 !px-4 text-sm"
+            className="btn-secondary !min-h-0 p-2.5 text-xs"
             type="button"
             onClick={() => inputRef.current?.click()}
             disabled={busy}
@@ -68,7 +68,7 @@ export default function CategoryImageUploader({
           </button>
           {imageUrl ? (
             <button
-              className="btn-danger !min-h-11 !px-4 text-sm"
+              className="btn-danger !min-h-0 p-2.5 text-xs"
               type="button"
               onClick={() => onChange("")}
               disabled={busy}
@@ -89,8 +89,8 @@ export default function CategoryImageUploader({
           event.target.value = "";
         }}
       />
-      {error ? <p className="text-sm font-semibold" role="alert" style={{ color: "var(--brick)" }}>{error}</p> : null}
-      <p className="text-xs" style={{ color: "var(--ink-2)" }}>JPG, PNG or WebP; 5 MB maximum before compression.</p>
+      {error ? <p className="text-xs font-semibold" role="alert" style={{ color: "var(--brick)" }}>{error}</p> : null}
+      <p className="text-xs text-gray-500">JPG, PNG or WebP; 5 MB maximum before compression.</p>
     </div>
   );
 }

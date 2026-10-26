@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 export default async function AdminCategoriesPage() {
   const categories = await listCategoriesAdmin();
   return (
-    <div className="w-full overflow-x-auto no-scrollbar px-2 sm:px-4">
+    <div className="w-full max-w-full overflow-x-hidden px-1 sm:px-4">
       <CategoriesManager initial={categories} />
     </div>
   );

@@ -270,25 +270,25 @@ export default function CategoriesManager({
 
       {/* Add / Edit Modal (Strictly Single-Level Main Category) */}
       {showForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-2 sm:p-4 backdrop-blur-sm overflow-y-auto">
+          <div className="w-full max-w-xl mx-auto px-4 py-6 overflow-x-hidden rounded-2xl bg-white shadow-2xl max-h-[90vh] overflow-y-auto box-border">
             <h2 className="text-xl font-bold text-gray-900 mb-4" style={{ fontFamily: "var(--font-display)" }}>
               {editing ? `Edit: ${editing.name}` : "Add Main Category"}
             </h2>
 
             {saveState.error && (
-              <div className="mb-4 rounded-lg bg-rose-50 p-3 text-sm text-rose-700 border border-rose-200">
+              <div className="mb-4 rounded-lg bg-rose-50 p-2.5 text-xs text-rose-700 border border-rose-200">
                 {saveState.error}
               </div>
             )}
 
-            <form action={saveAction} className="space-y-4">
+            <form action={saveAction} className="space-y-4 w-full max-w-full box-border">
               {editing && <input type="hidden" name="id" value={editing.id} />}
               {/* Always enforce parent_id is NULL */}
               <input type="hidden" name="parent_id" value="" />
 
               {/* Name */}
-              <div>
+              <div className="w-full max-w-full box-border">
                 <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
                   Category Name *
                 </label>
@@ -299,14 +299,14 @@ export default function CategoriesManager({
                   onChange={(e) => handleNameChange(e.target.value)}
                   required
                   maxLength={60}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none"
+                  className="w-full max-w-full box-border rounded-lg border border-gray-300 p-2.5 text-xs focus:border-emerald-500 focus:outline-none"
                   placeholder="e.g. Skincare"
                 />
               </div>
 
               {/* Slug */}
-              <div>
-                <div className="flex items-center justify-between mb-1">
+              <div className="w-full max-w-full box-border">
+                <div className="flex items-center justify-between mb-1 gap-2 flex-wrap">
                   <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider">
                     Slug (URL Key) *
                   </label>
@@ -330,16 +330,13 @@ export default function CategoriesManager({
                   }}
                   required
                   maxLength={120}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm font-mono focus:border-emerald-500 focus:outline-none"
+                  className="w-full max-w-full box-border rounded-lg border border-gray-300 p-2.5 text-xs font-mono focus:border-emerald-500 focus:outline-none"
                   placeholder="e.g. skincare"
                 />
               </div>
 
               {/* Image Uploader */}
-              <div>
-                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
-                  Category Image
-                </label>
+              <div className="w-full max-w-full box-border">
                 <CategoryImageUploader
                   imageUrl={imageUrl}
                   onChange={(url) => setImageUrl(url)}
@@ -348,8 +345,8 @@ export default function CategoriesManager({
               </div>
 
               {/* Sort Order & Settings */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-full box-border">
+                <div className="w-full max-w-full box-border">
                   <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
                     Sort Order
                   </label>
@@ -360,19 +357,19 @@ export default function CategoriesManager({
                     onChange={(e) => setSortOrder(Number(e.target.value))}
                     min={0}
                     max={9999}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none"
+                    className="w-full max-w-full box-border rounded-lg border border-gray-300 p-2.5 text-xs focus:border-emerald-500 focus:outline-none"
                   />
                 </div>
-                <div className="flex flex-col justify-center gap-2 pt-2">
-                  <label className="flex items-center gap-2 text-xs font-semibold text-gray-800 cursor-pointer rounded-lg bg-emerald-50/90 p-2.5 border border-emerald-200 shadow-sm">
+                <div className="flex flex-col justify-center gap-2 pt-1">
+                  <label className="flex items-center gap-2 text-xs font-semibold text-gray-800 cursor-pointer rounded-lg bg-emerald-50/90 p-2.5 border border-emerald-200 shadow-sm box-border">
                     <input
                       type="checkbox"
                       name="show_in_homepage"
                       checked={showInHomepage}
                       onChange={(e) => setShowInHomepage(e.target.checked)}
-                      className="rounded text-emerald-600 h-4 w-4"
+                      className="rounded text-emerald-600 h-4 w-4 shrink-0"
                     />
-                    <span className="font-bold text-emerald-900">Show in Shop by Category (Homepage)</span>
+                    <span className="font-bold text-emerald-900 leading-tight">Show in Shop by Category (Homepage)</span>
                   </label>
                   <label className="flex items-center gap-2 text-xs font-semibold text-gray-700 cursor-pointer">
                     <input
@@ -380,7 +377,7 @@ export default function CategoriesManager({
                       name="show_in_menu"
                       checked={showInMenu}
                       onChange={(e) => setShowInMenu(e.target.checked)}
-                      className="rounded text-emerald-600 h-4 w-4"
+                      className="rounded text-emerald-600 h-4 w-4 shrink-0"
                     />
                     <span>Show in Navigation Menu</span>
                   </label>
@@ -390,7 +387,7 @@ export default function CategoriesManager({
                       name="is_active"
                       checked={isActive}
                       onChange={(e) => setIsActive(e.target.checked)}
-                      className="rounded text-emerald-600 h-4 w-4"
+                      className="rounded text-emerald-600 h-4 w-4 shrink-0"
                     />
                     <span>Active on Website</span>
                   </label>
@@ -398,7 +395,7 @@ export default function CategoriesManager({
               </div>
 
               {/* Description */}
-              <div>
+              <div className="w-full max-w-full box-border">
                 <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
                   Description
                 </label>
@@ -408,16 +405,16 @@ export default function CategoriesManager({
                   onChange={(e) => setDescription(e.target.value)}
                   rows={2}
                   maxLength={500}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none"
+                  className="w-full max-w-full box-border rounded-lg border border-gray-300 p-2.5 text-xs focus:border-emerald-500 focus:outline-none"
                   placeholder="Optional brief description for SEO"
                 />
               </div>
 
               {/* Action Buttons */}
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100">
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-gray-100">
                 <button
                   type="button"
-                  className="btn-secondary !min-h-[40px] !px-4 text-sm"
+                  className="btn-secondary !min-h-0 p-2.5 text-xs"
                   onClick={() => {
                     setAdding(false);
                     setEditing(null);
@@ -428,7 +425,7 @@ export default function CategoriesManager({
                 </button>
                 <button
                   type="submit"
-                  className="btn-primary !min-h-[40px] !px-6 text-sm"
+                  className="btn-primary !min-h-0 p-2.5 px-5 text-xs"
                   disabled={savePending}
                 >
                   {savePending ? "Saving..." : editing ? "Save Changes" : "Create Main Category"}
@@ -441,21 +438,21 @@ export default function CategoriesManager({
 
       {/* Delete Confirmation Modal */}
       {deleting && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-2 sm:p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md mx-auto px-4 py-6 overflow-x-hidden rounded-2xl bg-white shadow-2xl box-border">
             <h2 className="text-xl font-bold text-gray-900 mb-2">Delete Category</h2>
             <p className="text-sm text-gray-600 mb-4">
               Are you sure you want to delete <span className="font-bold text-gray-900">“{deleting.name}”</span>?
             </p>
 
             {deleting.product_count > 0 ? (
-              <div className="mb-4 rounded-lg bg-amber-50 p-3 text-xs text-amber-800 border border-amber-200">
+              <div className="mb-4 rounded-lg bg-amber-50 p-2.5 text-xs text-amber-800 border border-amber-200">
                 ⚠️ This category currently contains <span className="font-bold">{deleting.product_count}</span> products. Move them to another category first.
               </div>
             ) : null}
 
             {deleteState.error && (
-              <div className="mb-4 rounded-lg bg-rose-50 p-3 text-xs text-rose-700 border border-rose-200">
+              <div className="mb-4 rounded-lg bg-rose-50 p-2.5 text-xs text-rose-700 border border-rose-200">
                 {deleteState.error}
               </div>
             )}
@@ -464,7 +461,7 @@ export default function CategoriesManager({
               <input type="hidden" name="id" value={deleting.id} />
               <button
                 type="button"
-                className="btn-secondary !min-h-[40px] !px-4 text-sm"
+                className="btn-secondary !min-h-0 p-2.5 text-xs"
                 onClick={() => setDeleting(null)}
                 disabled={deletePending}
               >
@@ -472,7 +469,7 @@ export default function CategoriesManager({
               </button>
               <button
                 type="submit"
-                className="rounded-lg bg-rose-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-rose-700 disabled:opacity-50"
+                className="rounded-lg bg-rose-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-rose-700 disabled:opacity-50"
                 disabled={deletePending || deleting.product_count > 0}
               >
                 {deletePending ? "Deleting..." : "Delete Category"}

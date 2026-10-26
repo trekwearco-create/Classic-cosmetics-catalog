@@ -583,20 +583,8 @@ export default function ProductView({
           </section>
         ) : null}
 
-        {/* Product Description (Moved Above Action Buttons) */}
-        {product.description ? (
-          <div className="w-full mt-5 pt-3 border-t border-gray-100 prose prose-sm text-gray-600 leading-relaxed">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-gray-900 mb-2 font-serif not-prose">
-              Product Details &amp; Description
-            </h3>
-            <p className="whitespace-pre-line text-sm text-gray-700 leading-relaxed">
-              {product.description}
-            </p>
-          </div>
-        ) : null}
-
         {/* Action Buttons Flow */}
-        <div className="w-full mt-6 space-y-3">
+        <div className="w-full mt-5 space-y-2 max-w-md">
           {/* 1. Add to Cart on top */}
           <AddToCartButton
             product={{
@@ -637,6 +625,18 @@ export default function ProductView({
             className="w-full py-2.5 px-5 text-[11px] font-semibold tracking-[0.18em] shadow-md"
           />
         </div>
+
+        {/* Description placed BELOW both buttons */}
+        {product.description ? (
+          <div className="mt-8 border-t border-gray-100 pt-6 prose prose-sm text-gray-600 leading-relaxed">
+            <h3 className="text-xs uppercase tracking-widest font-semibold text-[#0C3B25] mb-2 font-serif">
+              Description
+            </h3>
+            <p className="whitespace-pre-line text-sm text-gray-700 leading-relaxed">
+              {product.description}
+            </p>
+          </div>
+        ) : null}
       </div>
       {viewerIndex !== null && ImageViewerComponent ? (
         <ImageViewerComponent
