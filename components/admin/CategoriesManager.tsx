@@ -144,7 +144,7 @@ export default function CategoriesManager({
           <p className="mt-1 text-sm text-gray-500">
             Single-level main categories for storefront navigation, product categorization, and homepage stories rail.
           </p>
-          <div className="mt-2.5 flex items-center gap-2">
+          <div className="mt-2.5 flex flex-wrap items-center gap-2">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-800 border border-emerald-200 shadow-sm">
               ★ {categories.filter((c) => c.show_in_homepage).length} on Homepage &ldquo;Shop by Category&rdquo;
             </span>
@@ -153,9 +153,9 @@ export default function CategoriesManager({
             </span>
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 w-full sm:w-auto">
           <button
-            className="btn-primary"
+            className="btn-primary w-full sm:w-auto justify-center text-center"
             type="button"
             onClick={startAdd}
           >
@@ -190,82 +190,171 @@ export default function CategoriesManager({
           <p className="text-gray-500">No categories found.</p>
         </div>
       ) : (
-        <div className="card overflow-x-auto no-scrollbar">
-          <table className="w-full min-w-full text-left text-sm">
-            <thead>
-              <tr style={{ background: "var(--linen)" }}>
-                <th className="px-4 py-3 font-bold text-xs uppercase tracking-wider text-gray-700">Category</th>
-                <th className="px-4 py-3 font-bold text-xs uppercase tracking-wider text-gray-700">Products</th>
-                <th className="px-4 py-3 font-bold text-xs uppercase tracking-wider text-gray-700">Homepage Featured</th>
-                <th className="px-4 py-3 font-bold text-xs uppercase tracking-wider text-gray-700">Status</th>
-                <th className="px-4 py-3 font-bold text-xs uppercase tracking-wider text-gray-700 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {sortedCategories.map((c) => (
-                <tr key={c.id} className="hover:bg-gray-50/60 transition-colors">
-                  <td className="px-4 py-3.5">
-                    <div className="flex items-center gap-3">
-                      {c.image_url ? (
-                        <Image
-                          src={c.image_url}
-                          alt=""
-                          width={36}
-                          height={36}
-                          className="h-9 w-9 rounded-full object-cover shrink-0 border border-gray-200"
-                          unoptimized
-                        />
-                      ) : (
-                        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-100 text-emerald-800 font-bold text-xs shrink-0">
-                          {c.name.slice(0, 1)}
-                        </span>
-                      )}
-                      <div>
-                        <span className="font-bold text-gray-900 text-sm block">{c.name}</span>
-                        <span className="text-xs text-gray-400 font-mono">/{c.slug}</span>
+        <>
+          {/* Mobile View: Same options, purely vertical stack layout */}
+          <div className="w-full space-y-3 sm:hidden">
+            {sortedCategories.map((c) => (
+              <div
+                key={c.id}
+                className="w-full bg-white border border-gray-200 rounded-xl p-3 flex flex-col space-y-3 box-border"
+              >
+                {/* Category Image & Info Block */}
+                <div className="flex items-center space-x-3">
+                  {/* Category Image */}
+                  <div className="w-12 h-12 shrink-0">
+                    {c.image_url ? (
+                      <Image
+                        src={c.image_url}
+                        alt={c.name}
+                        width={48}
+                        height={48}
+                        className="w-full h-full object-cover rounded-lg border border-gray-100"
+                        unoptimized
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gray-100 rounded-lg flex items-center justify-center text-[10px] text-gray-400 font-bold">
+                        {c.name.slice(0, 1)}
                       </div>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3.5 text-xs text-gray-600 font-medium">
-                    <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-700">
-                      {c.product_count} {c.product_count === 1 ? "product" : "products"}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3.5 whitespace-nowrap">
-                    <button
-                      type="button"
-                      onClick={() => handleToggleHomepage(c)}
-                      disabled={togglingId === c.id}
-                      className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold transition ${
-                        c.show_in_homepage
-                          ? "bg-emerald-700 text-white shadow-sm hover:bg-emerald-800"
-                          : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                    )}
+                  </div>
+
+                  {/* Name & Slug Elements */}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-gray-900 truncate">{c.name}</p>
+                    <p className="text-[11px] text-gray-500 font-mono truncate">/{c.slug}</p>
+                  </div>
+
+                  {/* Status Badge */}
+                  <div className="shrink-0">
+                    <span
+                      className={`inline-block rounded px-2.5 py-0.5 text-xs font-medium ${
+                        c.is_active !== false ? "bg-emerald-100 text-emerald-800" : "bg-gray-100 text-gray-600"
                       }`}
-                      title="Toggle appearance in Homepage 'Shop by Category'"
                     >
-                      ★ {c.show_in_homepage ? "On Homepage" : "+ Add to Home"}
-                    </button>
-                  </td>
-                  <td className="px-4 py-3.5 whitespace-nowrap">
-                    <span className={`inline-block rounded px-2.5 py-0.5 text-xs font-medium ${c.is_active !== false ? "bg-emerald-100 text-emerald-800" : "bg-gray-100 text-gray-600"}`}>
                       {c.is_active !== false ? "Active" : "Hidden"}
                     </span>
-                  </td>
-                  <td className="px-4 py-3.5 whitespace-nowrap text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <button className="btn-secondary !min-h-[32px] !px-3 text-xs" type="button" onClick={() => startEdit(c)}>
-                        Edit
-                      </button>
-                      <button className="btn-secondary !min-h-[32px] !px-3 text-xs text-rose-600 hover:text-rose-700" type="button" onClick={() => setDeleting(c)}>
-                        Delete
-                      </button>
-                    </div>
-                  </td>
+                  </div>
+                </div>
+
+                {/* Status / Meta Elements */}
+                <div className="flex items-center justify-between text-xs pt-2 border-t border-gray-100">
+                  <span className="text-gray-500 font-medium">
+                    {c.product_count} {c.product_count === 1 ? "product" : "products"}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => handleToggleHomepage(c)}
+                    disabled={togglingId === c.id}
+                    className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold transition ${
+                      c.show_in_homepage
+                        ? "bg-emerald-700 text-white shadow-sm hover:bg-emerald-800"
+                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                    }`}
+                    title="Toggle appearance in Homepage 'Shop by Category'"
+                  >
+                    ★ {c.show_in_homepage ? "On Homepage" : "+ Add to Home"}
+                  </button>
+                </div>
+
+                {/* Same Action Options (Preserved intact) */}
+                <div className="flex items-center gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => startEdit(c)}
+                    className="flex-1 text-center py-2 px-3 text-xs font-medium bg-emerald-50 text-emerald-800 rounded-lg border border-emerald-200 hover:bg-emerald-100 transition-colors"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDeleting(c)}
+                    className="flex-1 text-center py-2 px-3 text-xs font-medium bg-red-50 text-red-700 rounded-lg border border-red-200 hover:bg-red-100 transition-colors"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop View: Keep existing table intact for sm and above */}
+          <div className="card overflow-x-auto no-scrollbar hidden sm:block">
+            <table className="w-full min-w-full text-left text-sm">
+              <thead>
+                <tr style={{ background: "var(--linen)" }}>
+                  <th className="px-4 py-3 font-bold text-xs uppercase tracking-wider text-gray-700">Category</th>
+                  <th className="px-4 py-3 font-bold text-xs uppercase tracking-wider text-gray-700">Products</th>
+                  <th className="px-4 py-3 font-bold text-xs uppercase tracking-wider text-gray-700">Homepage Featured</th>
+                  <th className="px-4 py-3 font-bold text-xs uppercase tracking-wider text-gray-700">Status</th>
+                  <th className="px-4 py-3 font-bold text-xs uppercase tracking-wider text-gray-700 text-right">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {sortedCategories.map((c) => (
+                  <tr key={c.id} className="hover:bg-gray-50/60 transition-colors">
+                    <td className="px-4 py-3.5">
+                      <div className="flex items-center gap-3">
+                        {c.image_url ? (
+                          <Image
+                            src={c.image_url}
+                            alt=""
+                            width={36}
+                            height={36}
+                            className="h-9 w-9 rounded-full object-cover shrink-0 border border-gray-200"
+                            unoptimized
+                          />
+                        ) : (
+                          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-100 text-emerald-800 font-bold text-xs shrink-0">
+                            {c.name.slice(0, 1)}
+                          </span>
+                        )}
+                        <div>
+                          <span className="font-bold text-gray-900 text-sm block">{c.name}</span>
+                          <span className="text-xs text-gray-400 font-mono">/{c.slug}</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3.5 text-xs text-gray-600 font-medium">
+                      <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-700">
+                        {c.product_count} {c.product_count === 1 ? "product" : "products"}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3.5 whitespace-nowrap">
+                      <button
+                        type="button"
+                        onClick={() => handleToggleHomepage(c)}
+                        disabled={togglingId === c.id}
+                        className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold transition ${
+                          c.show_in_homepage
+                            ? "bg-emerald-700 text-white shadow-sm hover:bg-emerald-800"
+                            : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                        }`}
+                        title="Toggle appearance in Homepage 'Shop by Category'"
+                      >
+                        ★ {c.show_in_homepage ? "On Homepage" : "+ Add to Home"}
+                      </button>
+                    </td>
+                    <td className="px-4 py-3.5 whitespace-nowrap">
+                      <span className={`inline-block rounded px-2.5 py-0.5 text-xs font-medium ${c.is_active !== false ? "bg-emerald-100 text-emerald-800" : "bg-gray-100 text-gray-600"}`}>
+                        {c.is_active !== false ? "Active" : "Hidden"}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3.5 whitespace-nowrap text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <button className="btn-secondary !min-h-[32px] !px-3 text-xs" type="button" onClick={() => startEdit(c)}>
+                          Edit
+                        </button>
+                        <button className="btn-secondary !min-h-[32px] !px-3 text-xs text-rose-600 hover:text-rose-700" type="button" onClick={() => setDeleting(c)}>
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
 
       {/* Add / Edit Modal (Strictly Single-Level Main Category) */}
