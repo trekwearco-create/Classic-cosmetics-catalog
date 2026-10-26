@@ -98,16 +98,13 @@ export async function saveCategoryAction(
     return { error: "Too many requests. Try again in a minute." };
   }
 
-  const parentIdRaw = formData.get("parent_id");
-  const parentId = parentIdRaw && parentIdRaw !== "" ? String(parentIdRaw) : null;
-
   const parsed = categorySchema.safeParse({
     id: formData.get("id") || undefined,
     name: formData.get("name"),
     slug: formData.get("slug") || undefined,
-    sort_order: formData.get("sort_order"),
+    sort_order: formData.get("sort_order") || 0,
     image_url: formData.get("image_url") || undefined,
-    parent_id: parentId,
+    parent_id: null,
     show_in_menu: formData.get("show_in_menu") === "on" || formData.get("show_in_menu") === "true",
     show_in_homepage: formData.get("show_in_homepage") === "on" || formData.get("show_in_homepage") === "true",
     is_active: formData.get("is_active") === null ? true : formData.get("is_active") === "on" || formData.get("is_active") === "true",
@@ -119,26 +116,8 @@ export async function saveCategoryAction(
 
   const supabase = await supabaseServer();
 
-  // Prevent setting self as parent
-  if (parsed.data.id && parsed.data.parent_id && parsed.data.id === parsed.data.parent_id) {
-    return { error: "A category cannot be its own parent." };
-  }
-
-  // Derive slug
-  let slug = parsed.data.slug?.trim() ? safeSlug(parsed.data.slug) : "";
-  if (!slug) {
-    const selfSlug = safeSlug(parsed.data.name);
-    if (parsed.data.parent_id) {
-      const { data: parent } = await supabase
-        .from("categories")
-        .select("slug")
-        .eq("id", parsed.data.parent_id)
-        .maybeSingle();
-      slug = parent?.slug ? `${parent.slug}-${selfSlug}` : selfSlug;
-    } else {
-      slug = selfSlug;
-    }
-  }
+  // Derive slug strictly flat for main category
+  const slug = parsed.data.slug?.trim() ? safeSlug(parsed.data.slug) : safeSlug(parsed.data.name);
 
   const previous = parsed.data.id
     ? await supabase
@@ -162,23 +141,16 @@ export async function saveCategoryAction(
   }
 
   const values: Record<string, unknown> = {
-    name: parsed.data.name,
+    name: parsed.data.name.trim(),
     slug,
-    sort_order: parsed.data.sort_order,
+    sort_order: parsed.data.sort_order ?? 0,
     image_url: parsed.data.image_url ?? null,
+    parent_id: null, // Always enforce NULL so it remains a pure Main Category
+    show_in_homepage: Boolean(parsed.data.show_in_homepage),
+    show_in_menu: parsed.data.show_in_menu !== false,
+    is_active: parsed.data.is_active !== false,
+    description: parsed.data.description ?? null,
   };
-  if (parsed.data.parent_id !== undefined) {
-    values.parent_id = parsed.data.parent_id ?? null;
-  }
-  if (parsed.data.show_in_menu !== undefined) {
-    values.show_in_menu = parsed.data.show_in_menu;
-  }
-  if (parsed.data.show_in_homepage !== undefined) {
-    values.show_in_homepage = parsed.data.show_in_homepage;
-  }
-  if (parsed.data.is_active !== undefined) {
-    values.is_active = parsed.data.is_active;
-  }
   if (parsed.data.description !== undefined) {
     values.description = parsed.data.description ?? null;
   }

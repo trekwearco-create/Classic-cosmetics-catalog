@@ -26,10 +26,9 @@ export default function CategoriesManager({
   const [editing, setEditing] = useState<AdminCategory | null>(null);
   const [deleting, setDeleting] = useState<AdminCategory | null>(null);
 
-  // Form fields
+  // Form fields (Strictly Main Categories)
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
-  const [parentId, setParentId] = useState<string>("");
   const [imageUrl, setImageUrl] = useState("");
   const [sortOrder, setSortOrder] = useState<number>(0);
   const [showInMenu, setShowInMenu] = useState(true);
@@ -60,9 +59,6 @@ export default function CategoriesManager({
     setTogglingId(null);
   };
 
-  // Expanded tree branches
-  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
-
   const [saveState, saveAction, savePending] = useActionState(
     saveCategoryAction,
     EMPTY_STATE,
@@ -79,39 +75,12 @@ export default function CategoriesManager({
     window.location.reload();
   }, [anyOpen, saveState.success, deleteState.success]);
 
-  // Build tree from categories
-  const { rootNodes, childrenMap } = useMemo(() => {
-    const childrenMap = new Map<string, AdminCategory[]>();
-    const rootNodes: AdminCategory[] = [];
-
-    for (const c of categories) {
-      if (c.parent_id) {
-        const list = childrenMap.get(c.parent_id) ?? [];
-        list.push(c);
-        childrenMap.set(c.parent_id, list);
-      } else {
-        rootNodes.push(c);
-      }
-    }
-
-    // Sort alphabetically by name (A to Z)
-    const sorter = (a: AdminCategory, b: AdminCategory) =>
-      a.name.localeCompare(b.name);
-    rootNodes.sort(sorter);
-    for (const [, list] of childrenMap.entries()) {
-      list.sort(sorter);
-    }
-
-    return { rootNodes, childrenMap };
-  }, [categories]);
-
   // Open modal for editing
   const startEdit = (c: AdminCategory) => {
     setEditing(c);
     setAdding(false);
     setName(c.name);
     setSlug(c.slug);
-    setParentId(c.parent_id ?? "");
     setImageUrl(c.image_url ?? "");
     setSortOrder(c.sort_order);
     setShowInMenu(c.show_in_menu !== false);
@@ -122,12 +91,11 @@ export default function CategoriesManager({
   };
 
   // Open modal for adding
-  const startAdd = (defaultParentId: string = "") => {
+  const startAdd = () => {
     setAdding(true);
     setEditing(null);
     setName("");
     setSlug("");
-    setParentId(defaultParentId);
     setImageUrl("");
     setSortOrder(0);
     setShowInMenu(true);
@@ -137,48 +105,31 @@ export default function CategoriesManager({
     setAutoSlug(true);
   };
 
-  const toggleExpand = (id: string) => {
-    setExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
-  };
-
-  // Auto-slug update
+  // Auto-slug generation directly from category name
   const handleNameChange = (val: string) => {
     setName(val);
     if (autoSlug) {
-      const selfSlug = val.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
-      if (parentId) {
-        const parent = categories.find((c) => c.id === parentId);
-        setSlug(parent ? `${parent.slug}-${selfSlug}` : selfSlug);
-      } else {
-        setSlug(selfSlug);
-      }
-    }
-  };
-
-  const handleParentChange = (newParentId: string) => {
-    setParentId(newParentId);
-    if (autoSlug && name) {
-      const selfSlug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
-      if (newParentId) {
-        const parent = categories.find((c) => c.id === newParentId);
-        setSlug(parent ? `${parent.slug}-${selfSlug}` : selfSlug);
-      } else {
-        setSlug(selfSlug);
-      }
+      setSlug(
+        val
+          .toLowerCase()
+          .trim()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/(^-|-$)+/g, ""),
+      );
     }
   };
 
   const showForm = adding || editing !== null;
 
-  // Filtered categories for search
-  const filteredCategories = useMemo(() => {
-    if (!search.trim()) return null;
+  // Filtered & A to Z sorted main categories
+  const sortedCategories = useMemo(() => {
+    const list = [...categories].sort((a, b) => a.name.localeCompare(b.name));
+    if (!search.trim()) return list;
     const term = search.toLowerCase();
-    return categories.filter(
+    return list.filter(
       (c) =>
         c.name.toLowerCase().includes(term) ||
-        c.slug.toLowerCase().includes(term) ||
-        (c.full_path && c.full_path.toLowerCase().includes(term)),
+        c.slug.toLowerCase().includes(term),
     );
   }, [categories, search]);
 
@@ -188,14 +139,17 @@ export default function CategoriesManager({
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold" style={{ fontFamily: "var(--font-display)" }}>
-            Category Tree
+            Main Categories
           </h1>
           <p className="mt-1 text-sm text-gray-500">
-            Unlimited depth category hierarchy for desktop mega-menu, mobile navigation, and homepage &ldquo;Shop by Category&rdquo;.
+            Single-level main categories for storefront navigation, product categorization, and homepage stories rail.
           </p>
           <div className="mt-2.5 flex items-center gap-2">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-800 border border-emerald-200 shadow-sm">
               ★ {categories.filter((c) => c.show_in_homepage).length} on Homepage &ldquo;Shop by Category&rdquo;
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-gray-50 px-3 py-1 text-xs font-bold text-gray-700 border border-gray-200">
+              Total {categories.length} Categories
             </span>
           </div>
         </div>
@@ -203,9 +157,9 @@ export default function CategoriesManager({
           <button
             className="btn-primary"
             type="button"
-            onClick={() => startAdd("")}
+            onClick={startAdd}
           >
-            + Add Top Category
+            + Add Main Category
           </button>
         </div>
       </div>
@@ -216,7 +170,7 @@ export default function CategoriesManager({
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Filter categories by name or path..."
+          placeholder="Filter categories by name or slug..."
           className="w-full max-w-md rounded-lg border border-gray-300 px-3.5 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none"
         />
         {search && (
@@ -230,46 +184,59 @@ export default function CategoriesManager({
         )}
       </div>
 
-      {/* Categories View */}
-      {categories.length === 0 ? (
+      {/* Categories Flat Table */}
+      {sortedCategories.length === 0 ? (
         <div className="card p-8 text-center">
-          <p className="text-gray-500">No categories found in database.</p>
+          <p className="text-gray-500">No categories found.</p>
         </div>
-      ) : filteredCategories ? (
-        /* Search results view */
+      ) : (
         <div className="card overflow-x-auto no-scrollbar">
           <table className="w-full min-w-full text-left text-sm">
             <thead>
               <tr style={{ background: "var(--linen)" }}>
-                <th className="px-3 py-2.5 font-bold text-xs whitespace-nowrap">Category</th>
-                <th className="px-3 py-2.5 font-bold text-xs whitespace-nowrap">Full Path</th>
-                <th className="px-3 py-2.5 font-bold text-xs whitespace-nowrap">Products</th>
-                <th className="px-3 py-2.5 font-bold text-xs whitespace-nowrap">Homepage</th>
-                <th className="px-3 py-2.5 font-bold text-xs whitespace-nowrap">Status</th>
-                <th className="px-3 py-2.5 font-bold text-xs whitespace-nowrap">Actions</th>
+                <th className="px-4 py-3 font-bold text-xs uppercase tracking-wider text-gray-700">Category</th>
+                <th className="px-4 py-3 font-bold text-xs uppercase tracking-wider text-gray-700">Products</th>
+                <th className="px-4 py-3 font-bold text-xs uppercase tracking-wider text-gray-700">Homepage Featured</th>
+                <th className="px-4 py-3 font-bold text-xs uppercase tracking-wider text-gray-700">Status</th>
+                <th className="px-4 py-3 font-bold text-xs uppercase tracking-wider text-gray-700 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody>
-              {filteredCategories.map((c) => (
-                <tr key={c.id} className="border-t" style={{ borderColor: "var(--line)" }}>
-                  <td className="px-3 py-2.5 font-semibold text-xs sm:text-sm">
-                    <div className="flex items-center gap-2">
+            <tbody className="divide-y divide-gray-100">
+              {sortedCategories.map((c) => (
+                <tr key={c.id} className="hover:bg-gray-50/60 transition-colors">
+                  <td className="px-4 py-3.5">
+                    <div className="flex items-center gap-3">
                       {c.image_url ? (
-                        <Image src={c.image_url} alt="" width={24} height={24} className="h-6 w-6 rounded-full object-cover shrink-0" unoptimized />
+                        <Image
+                          src={c.image_url}
+                          alt=""
+                          width={36}
+                          height={36}
+                          className="h-9 w-9 rounded-full object-cover shrink-0 border border-gray-200"
+                          unoptimized
+                        />
                       ) : (
-                        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-gray-100 text-xs shrink-0">📁</span>
+                        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-100 text-emerald-800 font-bold text-xs shrink-0">
+                          {c.name.slice(0, 1)}
+                        </span>
                       )}
-                      <span className="whitespace-nowrap">{c.name}</span>
+                      <div>
+                        <span className="font-bold text-gray-900 text-sm block">{c.name}</span>
+                        <span className="text-xs text-gray-400 font-mono">/{c.slug}</span>
+                      </div>
                     </div>
                   </td>
-                  <td className="px-3 py-2.5 text-xs text-gray-500 whitespace-nowrap">{c.full_path || c.name}</td>
-                  <td className="px-3 py-2.5 text-xs sm:text-sm">{c.product_count}</td>
-                  <td className="px-3 py-2.5 whitespace-nowrap">
+                  <td className="px-4 py-3.5 text-xs text-gray-600 font-medium">
+                    <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-700">
+                      {c.product_count} {c.product_count === 1 ? "product" : "products"}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3.5 whitespace-nowrap">
                     <button
                       type="button"
                       onClick={() => handleToggleHomepage(c)}
                       disabled={togglingId === c.id}
-                      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold transition ${
+                      className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold transition ${
                         c.show_in_homepage
                           ? "bg-emerald-700 text-white shadow-sm hover:bg-emerald-800"
                           : "bg-gray-100 text-gray-600 hover:bg-gray-200"
@@ -279,13 +246,13 @@ export default function CategoriesManager({
                       ★ {c.show_in_homepage ? "On Homepage" : "+ Add to Home"}
                     </button>
                   </td>
-                  <td className="px-3 py-2.5 whitespace-nowrap">
-                    <span className={`inline-block rounded px-2 py-0.5 text-xs font-medium ${c.is_active !== false ? "bg-emerald-100 text-emerald-800" : "bg-gray-100 text-gray-600"}`}>
+                  <td className="px-4 py-3.5 whitespace-nowrap">
+                    <span className={`inline-block rounded px-2.5 py-0.5 text-xs font-medium ${c.is_active !== false ? "bg-emerald-100 text-emerald-800" : "bg-gray-100 text-gray-600"}`}>
                       {c.is_active !== false ? "Active" : "Hidden"}
                     </span>
                   </td>
-                  <td className="px-3 py-2.5 whitespace-nowrap">
-                    <div className="flex gap-2">
+                  <td className="px-4 py-3.5 whitespace-nowrap text-right">
+                    <div className="flex items-center justify-end gap-2">
                       <button className="btn-secondary !min-h-[32px] !px-3 text-xs" type="button" onClick={() => startEdit(c)}>
                         Edit
                       </button>
@@ -299,227 +266,14 @@ export default function CategoriesManager({
             </tbody>
           </table>
         </div>
-      ) : (
-        /* Hierarchical tree view */
-        <div className="space-y-3">
-          {rootNodes.map((level1) => {
-            const level2List = childrenMap.get(level1.id) ?? [];
-            const isL1Expanded = expanded[level1.id] ?? true;
-
-            return (
-              <div key={level1.id} className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-                {/* Level 1 Item Row */}
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-gray-100 bg-gray-50/80 px-3 py-3 sm:px-6">
-                  <div className="flex items-start sm:items-center gap-2 sm:gap-3">
-                    <button
-                      type="button"
-                      onClick={() => toggleExpand(level1.id)}
-                      className="mt-0.5 sm:mt-0 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-gray-300 bg-white text-xs font-bold text-gray-600 shadow-sm transition hover:bg-gray-100"
-                    >
-                      {isL1Expanded ? "▼" : "▶"}
-                    </button>
-                    {level1.image_url ? (
-                      <Image src={level1.image_url} alt="" width={32} height={32} className="h-8 w-8 shrink-0 rounded-full object-cover" unoptimized />
-                    ) : (
-                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-800 text-sm font-bold">
-                        {level1.name.slice(0, 1)}
-                      </span>
-                    )}
-                    <div className="min-w-0">
-                      <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-                        <span className="font-extrabold text-gray-900 text-sm sm:text-base">{level1.name}</span>
-                        <span className="rounded bg-gray-100 px-2 py-0.5 text-[10px] sm:text-[11px] font-medium text-gray-600">
-                          Order: {level1.sort_order}
-                        </span>
-                        {level1.show_in_menu === false && (
-                          <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800">
-                            Hidden
-                          </span>
-                        )}
-                        {level1.is_active === false && (
-                          <span className="rounded bg-rose-100 px-1.5 py-0.5 text-[10px] font-semibold text-rose-800">
-                            Inactive
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-xs text-gray-500 font-mono truncate">/{level1.slug}</p>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-                    <button
-                      type="button"
-                      onClick={() => handleToggleHomepage(level1)}
-                      disabled={togglingId === level1.id}
-                      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold transition ${
-                        level1.show_in_homepage
-                          ? "bg-emerald-700 text-white shadow-sm hover:bg-emerald-800"
-                          : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                      }`}
-                      title="Toggle appearance in Homepage 'Shop by Category'"
-                    >
-                      ★ {level1.show_in_homepage ? "On Homepage" : "+ Homepage"}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => startAdd(level1.id)}
-                      className="rounded-md border border-emerald-300 bg-emerald-50 px-2 sm:px-2.5 py-1 text-xs font-semibold text-emerald-800 hover:bg-emerald-100"
-                    >
-                      + Sub-cat
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => startEdit(level1)}
-                      className="rounded-md border border-gray-300 px-2 sm:px-2.5 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-100"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setDeleting(level1)}
-                      className="rounded-md border border-rose-200 px-2 sm:px-2.5 py-1 text-xs font-semibold text-rose-600 hover:bg-rose-50"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </div>
-
-                {/* Level 2 Children */}
-                {isL1Expanded && level2List.length > 0 && (
-                  <div className="divide-y divide-gray-100 bg-white">
-                    {level2List.map((level2) => {
-                      const level3List = childrenMap.get(level2.id) ?? [];
-                      const isL2Expanded = expanded[level2.id] ?? false;
-
-                      return (
-                        <div key={level2.id} className="pl-3 pr-3 sm:pl-10 sm:pr-6">
-                          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between py-2.5">
-                            <div className="flex flex-wrap items-center gap-2">
-                              {level3List.length > 0 ? (
-                                <button
-                                  type="button"
-                                  onClick={() => toggleExpand(level2.id)}
-                                  className="flex h-5 w-5 shrink-0 items-center justify-center rounded border text-[10px] text-gray-500 hover:bg-gray-100"
-                                >
-                                  {isL2Expanded ? "▼" : "▶"}
-                                </button>
-                              ) : (
-                                <span className="h-5 w-5 shrink-0 flex items-center justify-center text-gray-300 text-xs">•</span>
-                              )}
-                              <span className="font-semibold text-xs sm:text-sm text-gray-800">{level2.name}</span>
-                              <span className="text-[10px] sm:text-[11px] text-gray-400 font-mono">/{level2.slug}</span>
-                              {level2.product_count > 0 && (
-                                <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
-                                  {level2.product_count} prods
-                                </span>
-                              )}
-                            </div>
-
-                            <div className="flex flex-wrap items-center gap-2">
-                              <button
-                                type="button"
-                                onClick={() => handleToggleHomepage(level2)}
-                                disabled={togglingId === level2.id}
-                                className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold transition ${
-                                  level2.show_in_homepage
-                                    ? "bg-emerald-700 text-white shadow-sm hover:bg-emerald-800"
-                                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                                }`}
-                                title="Toggle appearance in Homepage 'Shop by Category'"
-                              >
-                                ★ {level2.show_in_homepage ? "Home" : "+ Home"}
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => startAdd(level2.id)}
-                                className="text-xs text-emerald-700 hover:underline"
-                              >
-                                + Add Child
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => startEdit(level2)}
-                                className="text-xs text-gray-600 hover:text-gray-900"
-                              >
-                                Edit
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => setDeleting(level2)}
-                                className="text-xs text-rose-600 hover:text-rose-800"
-                              >
-                                Delete
-                              </button>
-                            </div>
-                          </div>
-
-                          {/* Level 3 Children */}
-                          {isL2Expanded && level3List.length > 0 && (
-                            <div className="mb-3 ml-4 sm:ml-7 space-y-1 border-l-2 border-emerald-200 pl-2.5 sm:pl-3">
-                              {level3List.map((level3) => (
-                                <div
-                                  key={level3.id}
-                                  className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between py-1 text-xs text-gray-600 hover:bg-gray-50 rounded px-1.5"
-                                >
-                                  <div className="flex flex-wrap items-center gap-2">
-                                    <span className="font-medium text-gray-800">{level3.name}</span>
-                                    <span className="text-[10px] text-gray-400 font-mono truncate">/{level3.slug}</span>
-                                    {level3.product_count > 0 && (
-                                      <span className="rounded bg-gray-100 px-1.5 py-0.2 text-[10px] text-gray-600">
-                                        {level3.product_count} prods
-                                      </span>
-                                    )}
-                                  </div>
-                                  <div className="flex flex-wrap items-center gap-2">
-                                    <button
-                                      type="button"
-                                      onClick={() => handleToggleHomepage(level3)}
-                                      disabled={togglingId === level3.id}
-                                      className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-semibold transition ${
-                                        level3.show_in_homepage
-                                          ? "bg-emerald-700 text-white"
-                                          : "bg-gray-100 text-gray-500 hover:bg-gray-200"
-                                      }`}
-                                      title="Toggle appearance in Homepage 'Shop by Category'"
-                                    >
-                                      ★ {level3.show_in_homepage ? "Home" : "+"}
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={() => startEdit(level3)}
-                                      className="text-gray-600 hover:text-gray-900"
-                                    >
-                                      Edit
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={() => setDeleting(level3)}
-                                      className="text-rose-600 hover:text-rose-800"
-                                    >
-                                      Delete
-                                    </button>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
       )}
 
-      {/* Add / Edit Modal */}
+      {/* Add / Edit Modal (Strictly Single-Level Main Category) */}
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
           <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
             <h2 className="text-xl font-bold text-gray-900 mb-4" style={{ fontFamily: "var(--font-display)" }}>
-              {editing ? `Edit: ${editing.name}` : "Add Category"}
+              {editing ? `Edit: ${editing.name}` : "Add Main Category"}
             </h2>
 
             {saveState.error && (
@@ -530,11 +284,13 @@ export default function CategoriesManager({
 
             <form action={saveAction} className="space-y-4">
               {editing && <input type="hidden" name="id" value={editing.id} />}
+              {/* Always enforce parent_id is NULL */}
+              <input type="hidden" name="parent_id" value="" />
 
               {/* Name */}
               <div>
                 <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
-                  Name *
+                  Category Name *
                 </label>
                 <input
                   type="text"
@@ -544,34 +300,8 @@ export default function CategoriesManager({
                   required
                   maxLength={60}
                   className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none"
-                  placeholder="e.g. Face Wash"
+                  placeholder="e.g. Skincare"
                 />
-              </div>
-
-              {/* Parent Category */}
-              <div>
-                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
-                  Parent Category
-                </label>
-                <select
-                  name="parent_id"
-                  value={parentId}
-                  onChange={(e) => handleParentChange(e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none"
-                >
-                  <option value="">None (Top-Level Category)</option>
-                  {[...categories]
-                    .filter((c) => !editing || c.id !== editing.id)
-                    .sort((a, b) => (a.full_path || a.name).localeCompare(b.full_path || b.name))
-                    .map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.full_path || c.name}
-                      </option>
-                    ))}
-                </select>
-                <p className="mt-1 text-[11px] text-gray-500">
-                  Select a parent to place this category under it in menus and catalogs.
-                </p>
               </div>
 
               {/* Slug */}
@@ -587,7 +317,7 @@ export default function CategoriesManager({
                       onChange={(e) => setAutoSlug(e.target.checked)}
                       className="rounded text-emerald-600"
                     />
-                    <span>Auto-generate from path</span>
+                    <span>Auto-generate</span>
                   </label>
                 </div>
                 <input
@@ -601,7 +331,7 @@ export default function CategoriesManager({
                   required
                   maxLength={120}
                   className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm font-mono focus:border-emerald-500 focus:outline-none"
-                  placeholder="e.g. skincare-face-cleansing-face-wash"
+                  placeholder="e.g. skincare"
                 />
               </div>
 
@@ -652,7 +382,7 @@ export default function CategoriesManager({
                       onChange={(e) => setShowInMenu(e.target.checked)}
                       className="rounded text-emerald-600 h-4 w-4"
                     />
-                    <span>Show in Mega-Menu</span>
+                    <span>Show in Navigation Menu</span>
                   </label>
                   <label className="flex items-center gap-2 text-xs font-semibold text-gray-700 cursor-pointer">
                     <input
@@ -701,7 +431,7 @@ export default function CategoriesManager({
                   className="btn-primary !min-h-[40px] !px-6 text-sm"
                   disabled={savePending}
                 >
-                  {savePending ? "Saving..." : editing ? "Save Changes" : "Create Category"}
+                  {savePending ? "Saving..." : editing ? "Save Changes" : "Create Main Category"}
                 </button>
               </div>
             </form>
@@ -717,12 +447,6 @@ export default function CategoriesManager({
             <p className="text-sm text-gray-600 mb-4">
               Are you sure you want to delete <span className="font-bold text-gray-900">“{deleting.name}”</span>?
             </p>
-
-            {deleting.children_count && deleting.children_count > 0 ? (
-              <div className="mb-4 rounded-lg bg-amber-50 p-3 text-xs text-amber-800 border border-amber-200">
-                ⚠️ This category has <span className="font-bold">{deleting.children_count}</span> sub-categories. You must delete or re-parent them before deleting this category.
-              </div>
-            ) : null}
 
             {deleting.product_count > 0 ? (
               <div className="mb-4 rounded-lg bg-amber-50 p-3 text-xs text-amber-800 border border-amber-200">
@@ -749,7 +473,7 @@ export default function CategoriesManager({
               <button
                 type="submit"
                 className="rounded-lg bg-rose-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-rose-700 disabled:opacity-50"
-                disabled={deletePending || (deleting.children_count ?? 0) > 0 || deleting.product_count > 0}
+                disabled={deletePending || deleting.product_count > 0}
               >
                 {deletePending ? "Deleting..." : "Delete Category"}
               </button>

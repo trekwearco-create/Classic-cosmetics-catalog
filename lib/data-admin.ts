@@ -86,46 +86,20 @@ export async function listCategoriesAdmin(): Promise<AdminCategory[]> {
     })) as unknown as typeof rows;
   }
 
-  // Count children per parent
-  const childrenCountByParent = new Map<string, number>();
-  for (const r of rows) {
-    if (r.parent_id) {
-      childrenCountByParent.set(
-        r.parent_id,
-        (childrenCountByParent.get(r.parent_id) ?? 0) + 1,
-      );
-    }
-  }
-
-  // Build name by id for full path
-  const nameById = new Map<string, { name: string; parent_id?: string | null }>();
-  for (const r of rows) {
-    nameById.set(r.id, { name: r.name, parent_id: r.parent_id });
-  }
-
-  const getFullPath = (id: string): string => {
-    const item = nameById.get(id);
-    if (!item) return "";
-    if (item.parent_id && nameById.has(item.parent_id)) {
-      return `${getFullPath(item.parent_id)} > ${item.name}`;
-    }
-    return item.name;
-  };
-
   return rows.map((r) => ({
     id: r.id,
     name: r.name,
     slug: r.slug,
     image_url: r.image_url,
     sort_order: r.sort_order,
-    parent_id: r.parent_id ?? null,
+    parent_id: null,
     show_in_menu: r.show_in_menu !== false,
     show_in_homepage: r.show_in_homepage === true,
     is_active: r.is_active !== false,
     description: r.description ?? null,
     product_count: r.products?.[0]?.count ?? 0,
-    children_count: childrenCountByParent.get(r.id) ?? 0,
-    full_path: getFullPath(r.id),
+    children_count: 0,
+    full_path: r.name,
   }));
 }
 

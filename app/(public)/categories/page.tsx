@@ -12,9 +12,7 @@ export const metadata: Metadata = {
 };
 
 export default async function CategoriesPage() {
-  const allCategories = await listCategories();
-  const rootCategories = allCategories.filter((c) => !c.parent_id);
-  const categories = rootCategories.length > 0 ? rootCategories : allCategories;
+  const categories = await listCategories();
 
   return (
     <main className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 overflow-x-hidden">

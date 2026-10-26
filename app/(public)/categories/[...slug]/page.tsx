@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import CategoryChips from "@/components/public/CategoryChips";
 import LoadMore from "@/components/public/LoadMore";
 import ProductCard from "@/components/public/ProductCard";
-import { listCategories, PAGE_SIZE, searchProductCards, type CategoryRow } from "@/lib/data";
+import { listCategories, PAGE_SIZE, searchProductCards } from "@/lib/data";
 
 type Props = {
   params: Promise<{ slug: string | string[] }>;
@@ -74,7 +73,7 @@ export default async function CategoryPage({ params }: Props) {
     );
   }
 
-  // Safe product search by category slug
+  // Direct product load for this main category without nested hierarchy checks
   const products = await searchProductCards({
     q: null,
     category: category.slug,
@@ -83,60 +82,26 @@ export default async function CategoryPage({ params }: Props) {
 
   const hasMore = products.length === PAGE_SIZE;
 
-  // Build hierarchical breadcrumbs: Home > Root > Subcategory > Child
-  const breadcrumbTrail: CategoryRow[] = [];
-  let currentCat: CategoryRow | undefined = category;
-  let depthGuard = 0;
-  while (currentCat && depthGuard < 10) {
-    breadcrumbTrail.unshift(currentCat);
-    currentCat = currentCat.parent_id
-      ? categories.find((c) => c.id === currentCat?.parent_id)
-      : undefined;
-    depthGuard++;
-  }
-
-  // Immediate sub-categories (if any exist under current category)
-  // OR siblings if it is a leaf category under a parent
-  const children = categories.filter((c) => c.parent_id === category.id);
-  const relevantCategories: CategoryRow[] =
-    children.length > 0
-      ? children
-      : category.parent_id
-      ? categories.filter((c) => c.parent_id === category.parent_id)
-      : [];
-
   return (
     <main className="mt-4 flex flex-col gap-6 pb-14 sm:mt-6 sm:gap-8 px-4 sm:px-6 max-w-7xl mx-auto w-full">
-      {/* Hierarchical Breadcrumbs */}
+      {/* Direct Breadcrumbs */}
       <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-1.5 text-xs text-gray-500">
         <Link href="/" className="hover:text-emerald-700 hover:underline">
           Home
         </Link>
-        {breadcrumbTrail.map((crumb, idx) => {
-          const isLast = idx === breadcrumbTrail.length - 1;
-          return (
-            <span key={crumb.id} className="flex items-center gap-1.5">
-              <span>/</span>
-              {isLast ? (
-                <span className="text-gray-900 font-semibold">{crumb.name}</span>
-              ) : (
-                <Link
-                  href={`/categories/${crumb.slug}`}
-                  className="hover:text-emerald-700 hover:underline"
-                >
-                  {crumb.name}
-                </Link>
-              )}
-            </span>
-          );
-        })}
+        <span>/</span>
+        <Link href="/categories" className="hover:text-emerald-700 hover:underline">
+          Categories
+        </Link>
+        <span>/</span>
+        <span className="text-gray-900 font-semibold">{category.name}</span>
       </nav>
 
       {/* Category Header */}
       <div className="flex flex-wrap items-end justify-between gap-3 border-b border-gray-100 pb-4">
         <div>
           <p className="text-xs font-bold uppercase tracking-wider text-emerald-700">
-            {breadcrumbTrail.length > 1 ? breadcrumbTrail[0]!.name : "Category"}
+            Category
           </p>
           <h1
             className="text-2xl font-extrabold tracking-tight text-gray-900 sm:text-3xl md:text-4xl"
@@ -149,11 +114,6 @@ export default async function CategoryPage({ params }: Props) {
           Showing {products.length} {products.length === 1 ? "item" : "items"}
         </p>
       </div>
-
-      {/* Category Chips Bar */}
-      {relevantCategories.length > 0 && (
-        <CategoryChips categories={relevantCategories} active={category.slug} />
-      )}
 
       {/* Products Grid or Graceful Empty State */}
       {products && products.length > 0 ? (

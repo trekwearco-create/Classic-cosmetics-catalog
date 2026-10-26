@@ -106,18 +106,19 @@ async function loadCategories(): Promise<CategoryRow[]> {
     const fullRes = await supabase
       .from("categories")
       .select("id, name, slug, image_url, sort_order, parent_id, show_in_menu, show_in_homepage, is_active, description")
-      .order("sort_order")
-      .order("name");
+      .order("name", { ascending: true });
     if (!fullRes.error && fullRes.data) {
-      return fullRes.data as CategoryRow[];
+      return (fullRes.data as CategoryRow[]).map((c) => ({
+        ...c,
+        parent_id: null,
+      }));
     }
 
     // Fallback if migration not applied yet
     const fallbackRes = await supabase
       .from("categories")
       .select("id, name, slug, image_url, sort_order")
-      .order("sort_order")
-      .order("name");
+      .order("name", { ascending: true });
     if (fallbackRes.error) {
       log.warn("public categories query failed", { code: fallbackRes.error.code });
       return [];
@@ -152,48 +153,25 @@ export async function listHomepageCategories(): Promise<CategoryRow[]> {
   if (featured.length > 0) {
     return featured.sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name));
   }
-  // Fall back to top-level active categories if none selected
-  return active
-    .filter((c) => !c.parent_id)
-    .sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name));
+  // Fall back to all active categories if none specially featured
+  return active.sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name));
 }
 
 export function buildCategoryTree(flat: CategoryRow[]): CategoryTreeNode[] {
   const activeList = flat.filter((c) => c.is_active !== false);
-  const byId = new Map<string, CategoryTreeNode>();
-  const roots: CategoryTreeNode[] = [];
-
-  for (const item of activeList) {
-    byId.set(item.id, {
+  return activeList
+    .map((item) => ({
       id: item.id,
       name: item.name,
       slug: item.slug,
       image_url: item.image_url,
       sort_order: item.sort_order,
-      parent_id: item.parent_id ?? null,
+      parent_id: null,
       show_in_menu: item.show_in_menu !== false,
       is_active: item.is_active !== false,
       children: [],
-    });
-  }
-
-  for (const item of activeList) {
-    const node = byId.get(item.id)!;
-    if (item.parent_id && byId.has(item.parent_id)) {
-      byId.get(item.parent_id)!.children.push(node);
-    } else {
-      roots.push(node);
-    }
-  }
-
-  const sortNodes = (nodes: CategoryTreeNode[]) => {
-    nodes.sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name));
-    for (const n of nodes) {
-      if (n.children.length > 0) sortNodes(n.children);
-    }
-  };
-  sortNodes(roots);
-  return roots;
+    }))
+    .sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name));
 }
 
 export async function listCategoryTree(): Promise<CategoryTreeNode[]> {
