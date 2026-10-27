@@ -251,6 +251,7 @@ export type AdminProduct = {
   is_visible: boolean;
   in_stock: boolean;
   category_id: string;
+  category_ids?: string[] | null;
   brand_id?: string | null;
   images: Array<{ id: string; url: string; storage_path: string; is_cover: boolean }>;
   shades: Array<{
@@ -268,16 +269,30 @@ export async function getProductAdmin(
   id: string,
 ): Promise<AdminProduct | null> {
   const supabase = await supabaseServer();
-  const { data, error } = await supabase
+  
+  // Try with category_ids first
+  let res = await supabase
     .from("products")
     .select(
-      "id, name, slug, description, price, discount_price, is_visible, in_stock, category_id, brand_id",
+      "id, name, slug, description, price, discount_price, is_visible, in_stock, category_id, category_ids, brand_id",
     )
     .eq("id", id)
     .maybeSingle();
-  if (error) throw new Error(error.message);
-  if (!data) return null;
-  const product = data as {
+
+  if (res.error) {
+    // Fallback if category_ids column is not present in schema yet
+    res = await supabase
+      .from("products")
+      .select(
+        "id, name, slug, description, price, discount_price, is_visible, in_stock, category_id, brand_id",
+      )
+      .eq("id", id)
+      .maybeSingle();
+  }
+
+  if (res.error) throw new Error(res.error.message);
+  if (!res.data) return null;
+  const product = res.data as {
     id: string;
     name: string;
     slug: string;
@@ -287,6 +302,7 @@ export async function getProductAdmin(
     is_visible: boolean;
     in_stock: boolean;
     category_id: string;
+    category_ids?: string[] | null;
     brand_id?: string | null;
   };
 
@@ -326,6 +342,7 @@ export async function getProductAdmin(
     is_visible: product.is_visible,
     in_stock: product.in_stock,
     category_id: product.category_id,
+    category_ids: product.category_ids ?? (product.category_id ? [product.category_id] : []),
     brand_id: product.brand_id ?? null,
     images: (imagesRes.data ?? [])
       .filter((image) => !shadeImageIds.has(image.id))

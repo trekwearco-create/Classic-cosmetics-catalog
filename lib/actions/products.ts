@@ -34,6 +34,7 @@ const productSchema = z.object({
   id: z.string().uuid(),
   name: z.string().trim().min(2).max(120),
   category_id: z.string().uuid().nullish().or(z.literal("")),
+  category_ids: z.array(z.string().uuid()).optional(),
   brand_id: z.string().uuid().nullish().or(z.literal("")),
   description: z.string().max(2000).nullish(),
   price: z.number().min(0).nullish(),
@@ -180,16 +181,22 @@ export async function saveProductAction(
   }
   const isUpdate = productRow !== null;
 
-  const selectedCategoryId =
-    data.category_id && data.category_id.trim() !== "" ? data.category_id : null;
+  const selectedCategoryIds =
+    Array.isArray(data.category_ids) && data.category_ids.length > 0
+      ? data.category_ids
+      : data.category_id && data.category_id.trim() !== ""
+        ? [data.category_id]
+        : [];
+  const primaryCategoryId = selectedCategoryIds[0] ?? null;
+
   const selectedBrandId =
     data.brand_id && data.brand_id.trim() !== "" ? data.brand_id : null;
 
-  if (selectedCategoryId) {
+  if (primaryCategoryId) {
     const { data: category } = await supabase
       .from("categories")
       .select("id")
-      .eq("id", selectedCategoryId)
+      .eq("id", primaryCategoryId)
       .maybeSingle();
     if (!category) {
       return { error: "Choose a valid category to continue." };
@@ -217,7 +224,8 @@ export async function saveProductAction(
 
   const productValues: Record<string, unknown> = {
     name: data.name,
-    category_id: selectedCategoryId ? selectedCategoryId : null,
+    category_id: primaryCategoryId,
+    category_ids: selectedCategoryIds,
     brand_id: selectedBrandId ? selectedBrandId : null,
     description: data.description ?? null,
     is_visible: data.is_visible,
@@ -226,7 +234,7 @@ export async function saveProductAction(
   if (data.price !== undefined) productValues.price = data.price ?? null;
   if (data.discount_price !== undefined) productValues.discount_price = data.discount_price ?? null;
 
-  const { error: productError } = isUpdate
+  let { error: productError } = isUpdate
     ? await supabase.from("products").update(productValues).eq("id", data.id)
     : await supabase
         .from("products")
@@ -238,6 +246,24 @@ export async function saveProductAction(
           is_best_seller: false,
           show_in_homepage: false,
         });
+
+  if (productError && productValues.category_ids) {
+    // If category_ids column is missing in DB schema, retry without it
+    delete productValues.category_ids;
+    const retryRes = isUpdate
+      ? await supabase.from("products").update(productValues).eq("id", data.id)
+      : await supabase
+          .from("products")
+          .insert({
+            ...productValues,
+            slug,
+            id: data.id,
+            is_korean: false,
+            is_best_seller: false,
+            show_in_homepage: false,
+          });
+    productError = retryRes.error;
+  }
 
   if (productError) {
     log.error("product save failed", { code: productError.code });
@@ -467,7 +493,7 @@ export async function duplicateProductAction(
   }
 
   const newId = crypto.randomUUID();
-  const { error } = await supabase.from("products").insert({
+  const insertPayload: Record<string, unknown> = {
     id: newId,
     name: `${original.name} (copy)`,
     category_id: original.category_id,
@@ -475,7 +501,15 @@ export async function duplicateProductAction(
     is_visible: false,
     in_stock: original.in_stock,
     slug,
-  });
+  };
+  if ((original as Record<string, unknown>).category_ids) {
+    insertPayload.category_ids = (original as Record<string, unknown>).category_ids;
+  }
+  let { error } = await supabase.from("products").insert(insertPayload);
+  if (error && insertPayload.category_ids) {
+    delete insertPayload.category_ids;
+    error = (await supabase.from("products").insert(insertPayload)).error;
+  }
   if (error) {
     log.error("product duplicate failed", { code: error.code });
     return { error: "Something went wrong. Please try again." };

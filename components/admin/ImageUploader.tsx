@@ -28,62 +28,81 @@ export default function ImageUploader({
   const inputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const deletedKeysRef = useRef<Set<string>>(new Set());
 
   async function upload(files: FileList) {
     setError(null);
+    const fileArray = Array.from(files);
+    if (!fileArray.length) return;
+
     const singleImage = purpose === "shade";
     if (
-      (singleImage && files.length > 1) ||
-      (!singleImage && items.length + files.length > max)
+      (singleImage && fileArray.length > 1) ||
+      (!singleImage && items.length + fileArray.length > max)
     ) {
       setError(`Up to ${max} photos per product.`);
       return;
     }
+
     setBusy(true);
-    const newItems: UploadItem[] = singleImage ? [] : [...items];
-    const previousItems = items;
-    for (const file of Array.from(files)) {
-      if (newItems.length >= max) break;
-      const { blob, error: compressError } = await compressImage(file);
-      if (compressError) {
-        setError("Use a JPG, PNG or WebP image under 5 MB.");
-        continue;
-      }
-      const key = `${file.name}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-      const placeholder: UploadItem = {
-        key,
-        url: URL.createObjectURL(blob),
-        path: "",
-        progress: "uploading",
-      };
-      if (!singleImage) {
-        newItems.push(placeholder);
-        onChange(newItems);
-      }
 
-      const body = new FormData();
-      body.set("productId", productId);
-      body.set("purpose", purpose);
-      body.set("file", new File([blob], "photo.webp", { type: "image/webp" }));
+    const allowedFiles = fileArray.slice(0, singleImage ? 1 : max - items.length);
+    const placeholders: UploadItem[] = allowedFiles.map((file) => ({
+      key: `${file.name}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      url: URL.createObjectURL(file),
+      path: "",
+      progress: "uploading",
+    }));
 
-      try {
-        const res = await fetch("/api/admin/upload", {
-          method: "POST",
-          body,
-          headers: { "Cache-Control": "no-store" },
-        });
-        if (!res.ok) throw new Error(String(res.status));
-        const json = (await res.json()) as { url: string; path: string };
-        placeholder.url = json.url;
-        placeholder.path = json.path;
-        placeholder.progress = "done";
-        onChange(singleImage ? [placeholder] : [...newItems]);
-      } catch {
-        placeholder.progress = "error";
-        setError("This photo could not be uploaded. Please try again.");
-        onChange(singleImage ? previousItems : [...newItems]);
-      }
-    }
+    let currentItems: UploadItem[] = singleImage ? placeholders : [...items, ...placeholders];
+    onChange(currentItems);
+
+    await Promise.all(
+      allowedFiles.map(async (file, idx) => {
+        const placeholder = placeholders[idx]!;
+        try {
+          const { blob, error: compressError } = await compressImage(file);
+          if (compressError) {
+            if (deletedKeysRef.current.has(placeholder.key)) return;
+            currentItems = currentItems.map((it) =>
+              it.key === placeholder.key ? { ...it, progress: "error" } : it,
+            );
+            onChange([...currentItems]);
+            return;
+          }
+
+          const body = new FormData();
+          body.set("productId", productId);
+          body.set("purpose", purpose);
+          body.set("file", new File([blob], "photo.webp", { type: "image/webp" }));
+
+          const res = await fetch("/api/admin/upload", {
+            method: "POST",
+            body,
+            headers: { "Cache-Control": "no-store" },
+          });
+
+          if (!res.ok) throw new Error(String(res.status));
+          const json = (await res.json()) as { url: string; path: string };
+
+          if (deletedKeysRef.current.has(placeholder.key)) return;
+          currentItems = currentItems.map((it) =>
+            it.key === placeholder.key
+              ? { ...it, url: json.url, path: json.path, progress: "done" }
+              : it,
+          );
+          onChange([...currentItems]);
+        } catch {
+          if (deletedKeysRef.current.has(placeholder.key)) return;
+          currentItems = currentItems.map((it) =>
+            it.key === placeholder.key ? { ...it, progress: "error" } : it,
+          );
+          setError("One or more photos could not be uploaded. Please try again.");
+          onChange([...currentItems]);
+        }
+      }),
+    );
+
     setBusy(false);
   }
 
@@ -97,6 +116,10 @@ export default function ImageUploader({
   }
 
   function remove(index: number) {
+    const item = items[index];
+    if (item) {
+      deletedKeysRef.current.add(item.key);
+    }
     onChange(items.filter((_, i) => i !== index));
   }
 
@@ -120,12 +143,20 @@ export default function ImageUploader({
             />
             {purpose === "product" && i === 0 ? (
               <span
-                className="absolute left-1.5 top-1.5 rounded px-1.5 py-1 text-[10px] font-bold"
-                style={{ background: "var(--ink)", color: "var(--white)" }}
+                className="absolute left-1.5 top-1.5 z-10 rounded bg-[#0C3B25] px-2 py-0.5 text-[10px] font-bold text-white shadow-xs tracking-wide"
               >
-                Cover
+                Cover Photo
               </span>
             ) : null}
+            <button
+              type="button"
+              aria-label={purpose === "shade" ? "Remove shade photo" : "Delete photo"}
+              onClick={() => remove(i)}
+              disabled={busy}
+              className="absolute right-1.5 top-1.5 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-black/60 text-white hover:bg-red-600 transition-colors text-[10px] font-bold shadow"
+            >
+              ✕
+            </button>
             {item.progress === "uploading" ? (
               <div className="absolute inset-0 grid place-items-center text-xs font-semibold" style={{ background: "rgba(255,255,255,.7)" }}>
                 Uploading
@@ -139,11 +170,11 @@ export default function ImageUploader({
                 Failed
               </div>
             ) : null}
-            <div
-              className="absolute inset-x-0 bottom-0 flex justify-center gap-1 p-1"
-              style={{ background: "rgba(255,255,255,.82)" }}
-            >
-              {purpose === "product" ? (
+            {purpose === "product" ? (
+              <div
+                className="absolute inset-x-0 bottom-0 flex justify-center gap-1 p-1"
+                style={{ background: "rgba(255,255,255,.82)" }}
+              >
                 <button
                   type="button"
                   aria-label="Move photo earlier"
@@ -153,18 +184,6 @@ export default function ImageUploader({
                 >
                   ←
                 </button>
-              ) : null}
-              <button
-                type="button"
-                aria-label={purpose === "shade" ? "Remove shade photo" : "Delete photo"}
-                onClick={() => remove(i)}
-                disabled={busy}
-                className="rounded px-1.5 py-0.5 text-xs font-bold"
-                style={{ color: "var(--brick)" }}
-              >
-                ✕
-              </button>
-              {purpose === "product" ? (
                 <button
                   type="button"
                   aria-label="Move photo later"
@@ -174,8 +193,8 @@ export default function ImageUploader({
                 >
                   →
                 </button>
-              ) : null}
-            </div>
+              </div>
+            ) : null}
           </div>
         ))}
         {items.length < max || purpose === "shade" ? (
@@ -183,7 +202,7 @@ export default function ImageUploader({
             type="button"
             onClick={() => inputRef.current?.click()}
             disabled={busy}
-            className="grid aspect-square place-items-center rounded-xl border text-sm font-semibold"
+            className="grid aspect-square place-items-center rounded-xl border text-sm font-semibold hover:border-gray-400 transition-colors"
             style={{ borderColor: "var(--line)", background: "var(--linen)" }}
           >
             <span>
@@ -197,7 +216,7 @@ export default function ImageUploader({
       <input
         ref={inputRef}
         type="file"
-        accept="image/jpeg,image/png,image/webp"
+        accept="image/*"
         multiple
         className="hidden"
         onChange={(e) => {
@@ -215,7 +234,7 @@ export default function ImageUploader({
       <p className="mt-2 text-xs" style={{ color: "var(--ink-2)" }}>
         {purpose === "shade"
           ? "Upload a separate photo for this shade. Replacing or removing it takes effect when the product is saved."
-          : "The first photo becomes the cover. Use the arrows to reorder or ✕ to delete."}
+          : "The first photo automatically becomes the Cover Photo. Select multiple images at once to batch upload. Use ✕ to delete or arrows to reorder."}
       </p>
     </div>
   );

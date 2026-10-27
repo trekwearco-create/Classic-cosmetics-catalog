@@ -33,6 +33,7 @@ export default async function NewProductPage() {
           is_visible: true,
           in_stock: true,
           category_id: "",
+          category_ids: [],
           brand_id: "",
           images: [],
           shades: [],

@@ -24,6 +24,7 @@ export type ProductFormInitial = {
   is_visible: boolean;
   in_stock: boolean;
   category_id: string;
+  category_ids?: string[];
   brand_id?: string | null;
   images: UploadItem[];
   shades: ShadeRow[];
@@ -48,10 +49,13 @@ export default function ProductForm({
   const [name, setName] = useState(initial.name);
   const [selectedBrandId, setSelectedBrandId] = useState(initial.brand_id ?? "");
 
-  // Single-level Main Category selection
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string>(
-    initial.category_id || "",
-  );
+  // Multi-Category selection
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>(() => {
+    if (initial.category_ids && initial.category_ids.length > 0) {
+      return initial.category_ids;
+    }
+    return initial.category_id ? [initial.category_id] : [];
+  });
 
   const [description, setDescription] = useState(initial.description);
   const [price, setPrice] = useState<string>(
@@ -72,7 +76,12 @@ export default function ProductForm({
     () =>
       JSON.stringify({
         name: initial.name,
-        categoryId: initial.category_id,
+        categoryIds:
+          initial.category_ids && initial.category_ids.length > 0
+            ? initial.category_ids
+            : initial.category_id
+              ? [initial.category_id]
+              : [],
         description: initial.description,
         price: initial.price,
         discount_price: initial.discount_price,
@@ -88,7 +97,7 @@ export default function ProductForm({
     () =>
       JSON.stringify({
         name,
-        categoryId: selectedCategoryId,
+        categoryIds: selectedCategoryIds,
         description,
         price,
         discountPrice,
@@ -97,27 +106,10 @@ export default function ProductForm({
         images: images.filter((i) => i.progress === "done").map((i) => i.path),
         shades,
       }),
-    [name, selectedCategoryId, description, price, discountPrice, isVisible, inStock, images, shades],
+    [name, selectedCategoryIds, description, price, discountPrice, isVisible, inStock, images, shades],
   );
 
   const dirty = currentSnapshot !== initialSnapshot;
-
-  useEffect(() => {
-    if (!dirty) return;
-    const handler = (e: BeforeUnloadEvent) => {
-      e.preventDefault();
-    };
-    window.addEventListener("beforeunload", handler);
-    return () => window.removeEventListener("beforeunload", handler);
-  }, [dirty]);
-
-  useEffect(() => {
-    const onBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (dirty) e.preventDefault();
-    };
-    window.addEventListener("beforeunload", onBeforeUnload);
-    return () => window.removeEventListener("beforeunload", onBeforeUnload);
-  }, [dirty]);
 
   useEffect(() => {
     if (!dirty) return;
@@ -132,6 +124,10 @@ export default function ProductForm({
     setFormError(null);
     if (name.trim().length < 2) {
       setFormError("Fill in the product name (minimum 2 characters).");
+      return;
+    }
+    if (selectedCategoryIds.length === 0) {
+      setFormError("Please select at least one category.");
       return;
     }
     if (pendingShadeInput) {
@@ -150,13 +146,15 @@ export default function ProductForm({
       setFormError("Wait for shade photo uploads to finish, then save.");
       return;
     }
+    const primaryCategoryId = selectedCategoryIds[0] || null;
     const fd = new FormData();
     fd.set(
       "payload",
       JSON.stringify({
         id: initial.id,
         name: name.trim(),
-        category_id: selectedCategoryId ? selectedCategoryId : null,
+        category_id: primaryCategoryId,
+        category_ids: selectedCategoryIds,
         brand_id: selectedBrandId ? selectedBrandId : null,
         description: description.trim() === "" ? null : description.trim(),
         price: price.trim() === "" ? null : Number(price),
@@ -168,7 +166,7 @@ export default function ProductForm({
     fd.set(
       "images",
       JSON.stringify(
-        images.map((i) => ({ url: i.url, path: i.path, is_cover: false })),
+        images.map((i, idx) => ({ url: i.url, path: i.path, is_cover: idx === 0 })),
       ),
     );
     fd.set(
@@ -233,22 +231,6 @@ export default function ProductForm({
             />
           </label>
           <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-1">Select Main Category</label>
-            <select
-              value={selectedCategoryId || ''}
-              onChange={(e) => setSelectedCategoryId(e.target.value)}
-              className="w-full rounded-lg border border-gray-200 p-2.5 text-xs focus:border-[#0C3B25] focus:outline-none"
-              required
-            >
-              <option value="">Choose Category</option>
-              {categories.map((cat) => (
-                <option key={cat.id} value={cat.id}>
-                  {cat.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
             <label className="block text-xs font-semibold text-gray-700 mb-1">Brand</label>
             <select
               value={selectedBrandId}
@@ -260,6 +242,44 @@ export default function ProductForm({
                 <option key={b.id} value={b.id}>{b.name}</option>
               ))}
             </select>
+          </div>
+          <div className="md:col-span-2">
+            <label className="block text-xs font-semibold text-gray-700 mb-2">
+              Select Categories (One product can belong to multiple categories)
+            </label>
+            <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto p-3 border border-gray-200 rounded-xl bg-gray-50/50">
+              {categories.map((cat) => {
+                const isSelected = selectedCategoryIds.includes(cat.id);
+                return (
+                  <button
+                    type="button"
+                    key={cat.id}
+                    onClick={() => {
+                      if (isSelected) {
+                        setSelectedCategoryIds(selectedCategoryIds.filter((id) => id !== cat.id));
+                      } else {
+                        setSelectedCategoryIds([...selectedCategoryIds, cat.id]);
+                      }
+                    }}
+                    className={`text-xs px-3 py-1.5 rounded-lg border font-medium transition-all ${
+                      isSelected
+                        ? "bg-[#0C3B25] text-white border-[#0C3B25] shadow-xs"
+                        : "bg-white text-gray-700 border-gray-200 hover:border-gray-300"
+                    }`}
+                  >
+                    {isSelected ? "✓ " : "+ "}{cat.name}
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-[10px] text-gray-500 mt-1">
+              Selected: {selectedCategoryIds.length} categories
+              {selectedCategoryIds.length > 0 && categories.find((c) => c.id === selectedCategoryIds[0]) ? (
+                <span className="ml-2 font-medium text-emerald-800">
+                  (Primary: {categories.find((c) => c.id === selectedCategoryIds[0])?.name})
+                </span>
+              ) : null}
+            </p>
           </div>
           <div className="flex flex-wrap items-start gap-6">
             <label className="flex items-center gap-2 text-sm font-semibold">

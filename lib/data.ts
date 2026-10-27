@@ -295,11 +295,43 @@ async function loadProductCards({
       slug: string;
       name: string;
       category_id: string;
+      category_ids?: string[] | null;
       brand_id?: string | null;
       in_stock: boolean;
       price: number | null;
       discount_price: number | null;
     }>;
+
+    if (cat && !trimmed) {
+      try {
+        const { data: catData } = await supabase
+          .from("categories")
+          .select("id")
+          .eq("slug", cat)
+          .maybeSingle();
+
+        if (catData?.id) {
+          const { data: extraData } = await supabase
+            .from("products")
+            .select("id, slug, name, category_id, category_ids, brand_id, in_stock, price, discount_price")
+            .eq("is_visible", true)
+            .contains("category_ids", [catData.id])
+            .limit(PAGE_SIZE);
+
+          if (extraData && extraData.length > 0) {
+            const existingIds = new Set(rows.map((r) => r.id));
+            for (const ep of extraData) {
+              if (!existingIds.has(ep.id)) {
+                rows.push(ep);
+                existingIds.add(ep.id);
+              }
+            }
+          }
+        }
+      } catch {
+        // Safe fallback if category_ids column is not present in schema
+      }
+    }
 
     if (rows.length === 0) return [];
     const ids = rows.map((r) => r.id);

@@ -47,6 +47,7 @@ export default async function EditProductPage({
           is_visible: product.is_visible,
           in_stock: product.in_stock,
           category_id: product.category_id,
+          category_ids: product.category_ids ?? (product.category_id ? [product.category_id] : []),
           brand_id: product.brand_id ?? "",
           images: product.images.map((img) => ({
             key: img.id,
