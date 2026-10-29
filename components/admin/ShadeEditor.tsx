@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import ImageUploader, { type UploadItem } from "@/components/admin/ImageUploader";
+import { compressImage } from "@/lib/image-compress";
 
 export type ShadeRow = {
   key: string;
@@ -56,6 +57,9 @@ export default function ShadeEditor({
 }) {
   const [bulkOpen, setBulkOpen] = useState(false);
   const [bulkText, setBulkText] = useState("");
+  const [uploadingBatch, setUploadingBatch] = useState(false);
+  const [batchError, setBatchError] = useState<string | null>(null);
+  const batchInputRef = useRef<HTMLInputElement>(null);
 
   function update(index: number, patch: Partial<ShadeRow>) {
     onChange(shades.map((s, i) => (i === index ? { ...s, ...patch } : s)));
@@ -82,6 +86,99 @@ export default function ShadeEditor({
         image: null,
       },
     ]);
+  }
+
+  async function handleBatchPhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? []);
+    e.target.value = "";
+    if (!files.length) return;
+
+    setBatchError(null);
+    setUploadingBatch(true);
+
+    // Create placeholder rows immediately so the user sees progress
+    const placeholderRows: ShadeRow[] = files.map((file) => ({
+      key: `batch-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      code: "",
+      name: "",
+      color_hex: "",
+      is_available: true,
+      image: {
+        key: `img-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        url: URL.createObjectURL(file),
+        path: "",
+        progress: "uploading",
+      },
+    }));
+
+    // Append placeholders so the user sees rows appear immediately
+    let currentShades = [...shades, ...placeholderRows];
+    onChange(currentShades);
+
+    const startIndex = shades.length;
+    let hadError = false;
+
+    await Promise.all(
+      files.map(async (file, idx) => {
+        const placeholder = placeholderRows[idx]!;
+        try {
+          const { blob, error: compressError } = await compressImage(file);
+          if (compressError) {
+            currentShades = currentShades.map((s) =>
+              s.key === placeholder.key
+                ? { ...s, image: s.image ? { ...s.image, progress: "error" } : null }
+                : s,
+            );
+            onChange([...currentShades]);
+            hadError = true;
+            return;
+          }
+
+          const body = new FormData();
+          body.set("productId", productId);
+          body.set("purpose", "shade");
+          body.set("file", new File([blob], "photo.webp", { type: "image/webp" }));
+
+          const res = await fetch("/api/admin/upload", {
+            method: "POST",
+            body,
+            headers: { "Cache-Control": "no-store" },
+          });
+
+          if (!res.ok) throw new Error(String(res.status));
+          const json = (await res.json()) as { url: string; path: string };
+
+          currentShades = currentShades.map((s) =>
+            s.key === placeholder.key
+              ? {
+                  ...s,
+                  image: {
+                    key: placeholder.image!.key,
+                    url: json.url,
+                    path: json.path,
+                    progress: "done",
+                  },
+                }
+              : s,
+          );
+          onChange([...currentShades]);
+        } catch {
+          currentShades = currentShades.map((s) =>
+            s.key === placeholder.key
+              ? { ...s, image: s.image ? { ...s.image, progress: "error" } : null }
+              : s,
+          );
+          onChange([...currentShades]);
+          hadError = true;
+        }
+      }),
+    );
+
+    if (hadError) {
+      setBatchError("One or more shade photos failed to upload. Remove the failed rows and try again.");
+    }
+    setUploadingBatch(false);
+    void startIndex; // suppress unused var
   }
 
   return (
@@ -176,6 +273,21 @@ export default function ShadeEditor({
         <button className="btn-secondary !min-h-[44px] !px-4 text-sm" type="button" onClick={add}>
           Add shade
         </button>
+        {/* Batch multi-photo upload button */}
+        <label
+          className={`flex cursor-pointer items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-medium text-[#0C3B25] transition-colors hover:bg-emerald-100 !min-h-[44px] ${uploadingBatch ? "pointer-events-none opacity-60" : ""}`}
+        >
+          <span>{uploadingBatch ? "Uploading…" : "⬆ Upload Multiple Shade Photos"}</span>
+          <input
+            ref={batchInputRef}
+            type="file"
+            multiple
+            accept="image/*"
+            className="hidden"
+            disabled={uploadingBatch}
+            onChange={(e) => void handleBatchPhotoUpload(e)}
+          />
+        </label>
         <button
           className="btn-secondary !min-h-[44px] !px-4 text-sm"
           type="button"
@@ -184,6 +296,11 @@ export default function ShadeEditor({
           Paste a list
         </button>
       </div>
+      {batchError ? (
+        <p className="mt-2 text-sm font-semibold" style={{ color: "var(--brick)" }} role="alert">
+          {batchError}
+        </p>
+      ) : null}
       {bulkOpen ? (
         <div className="mt-2 rounded-xl border p-3" style={{ borderColor: "var(--line)" }}>
           <textarea
