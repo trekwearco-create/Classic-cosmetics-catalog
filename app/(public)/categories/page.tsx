@@ -47,7 +47,7 @@ export default async function CategoriesPage() {
       </div>
 
       {categories.length > 0 ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-6">
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3 sm:gap-4 px-1 py-2">
           {categories.map((category) => (
             <CategoryCard key={category.id} category={category} />
           ))}

@@ -8,9 +8,9 @@ export default function CategoryCard({ category }: { category: CategoryRow }) {
     <Link
       href={`/categories/${category.slug}`}
       prefetch={true}
-      className="flex w-full min-w-0 flex-col items-center gap-2 text-center"
+      className="flex w-full min-w-0 flex-col items-center gap-1.5 text-center group"
     >
-      <span className="relative aspect-square w-full overflow-hidden rounded-full border bg-linen" style={{ borderColor: "var(--line)" }}>
+      <span className="relative aspect-square w-full overflow-hidden rounded-full border bg-linen transition-transform group-hover:scale-105" style={{ borderColor: "var(--line)" }}>
         {category.image_url ? (
           <Image
             src={category.image_url}
@@ -30,7 +30,7 @@ export default function CategoryCard({ category }: { category: CategoryRow }) {
           </span>
         )}
       </span>
-      <span className="break-anywhere line-clamp-2 text-sm font-semibold leading-tight">{category.name}</span>
+      <span className="break-anywhere line-clamp-2 text-[11px] font-semibold leading-tight group-hover:text-emerald-800">{category.name}</span>
     </Link>
   );
 }

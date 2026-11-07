@@ -169,6 +169,7 @@ export default async function HomePage({
             subtitle="Curated For You"
             viewAllHref="/categories"
             products={ourCollection}
+            mobileLayout="grid"
           />
         </div>
       )}
