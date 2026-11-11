@@ -56,9 +56,22 @@ export default function CategoryRail({
         <Link
           href="/categories"
           prefetch={true}
-          className="text-xs font-semibold text-emerald-700 hover:text-emerald-800 hover:underline sm:text-sm"
+          className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 hover:text-emerald-800 hover:underline sm:text-sm"
         >
-          View all
+          <span>View all</span>
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <polyline points="9 18 15 12 9 6" />
+          </svg>
         </Link>
       </div>
 
